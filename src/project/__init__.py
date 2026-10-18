@@ -1,0 +1,1 @@
+"""Truck milestone watcher package."""
