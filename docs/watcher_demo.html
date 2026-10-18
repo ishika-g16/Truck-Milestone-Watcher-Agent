@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Truck Milestone Watcher - Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+
+  /* ============ TOKENS ============ */
+  :root{
+    --paper: #E9E6DA;
+    --paper-deep: #DFDBC9;
+    --paper-card: #F1EEE3;
+    --ink: #1C2530;
+    --ink-soft: #52596A;
+    --ink-faint: #7A7F6F;
+    --rust: #A8461F;
+    --rust-soft: #C97A52;
+    --amber: #8F6A1E;
+    --teal: #2F5D53;
+    --line: #C9C2A9;
+    --line-strong: #9C9578;
+    --font-display: 'Zilla Slab', Georgia, serif;
+    --font-body: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+    --rail-w: 250px;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html{ scroll-behavior:smooth; }
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--font-body);
+    font-size:16px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  @media (prefers-reduced-motion: reduce){
+    html{ scroll-behavior:auto; }
+    *{ animation:none !important; transition:none !important; }
+  }
+
+  a{ color:inherit; }
+  ::selection{ background:var(--rust); color:var(--paper); }
+  :focus-visible{ outline:2px solid var(--rust); outline-offset:2px; }
+
+  h1,h2,h3,h4{ font-family:var(--font-display); font-weight:600; color:var(--ink); }
+
+  /* ============ RAIL ============ */
+  .rail{
+    position:fixed; top:0; left:0; width:var(--rail-w); height:100vh;
+    border-right:1px solid var(--line);
+    padding:2.2rem 1.6rem;
+    display:flex; flex-direction:column;
+    z-index:50;
+  }
+  .rail-mark{ font-family:var(--font-display); font-size:1.05rem; font-weight:600; margin-bottom:0.15rem; }
+  .rail-mark span{ color:var(--rust); }
+  .rail-sub{ font-size:0.75rem; color:var(--ink-faint); margin-bottom:2.4rem; line-height:1.5; }
+  .rail-nav{ display:flex; flex-direction:column; gap:0.05rem; }
+  .rail-link{
+    display:flex; gap:0.7rem; align-items:baseline; padding:0.5rem 0.4rem;
+    text-decoration:none; border-left:2px solid transparent; color:var(--ink-soft);
+    transition:color .15s ease, border-color .15s ease;
+  }
+  .rail-link .num{ font-family:var(--font-mono); font-size:0.75rem; color:var(--ink-faint); min-width:1.3rem; }
+  .rail-link .label{ font-size:0.86rem; }
+  .rail-link:hover{ color:var(--ink); }
+  .rail-link.active{ color:var(--ink); border-left-color:var(--rust); background:var(--paper-card); }
+  .rail-link.active .num{ color:var(--rust); }
+  .rail-foot{ margin-top:auto; font-size:0.72rem; color:var(--ink-faint); line-height:1.6; padding-top:1.5rem; border-top:1px solid var(--line); }
+
+  /* ============ MAIN ============ */
+  .main{ margin-left:var(--rail-w); max-width:840px; padding:0 4rem; }
+  section{ padding:5.5rem 0; border-bottom:1px solid var(--line); }
+  section:last-of-type{ border-bottom:none; }
+
+  .kicker{ font-family:var(--font-mono); font-size:0.78rem; color:var(--rust); margin-bottom:0.9rem; }
+  h2.title{ font-size:2.15rem; line-height:1.2; max-width:30ch; margin-bottom:0.4rem; }
+  h3.sub{ font-size:1.3rem; margin-top:2.6rem; margin-bottom:0.9rem; color:var(--ink); }
+  h4.micro{ font-family:var(--font-body); font-size:0.95rem; font-weight:600; margin-top:1.6rem; margin-bottom:0.5rem; color:var(--ink); }
+
+  p{ max-width:66ch; color:var(--ink-soft); margin-bottom:1rem; }
+  p.lede{ font-size:1.12rem; color:var(--ink); max-width:58ch; }
+  p.tight{ margin-bottom:0.6rem; }
+  strong{ color:var(--ink); font-weight:600; }
+
+  ul.plain, ol.plain{ margin:0.6rem 0 1.2rem 1.3rem; max-width:64ch; }
+  ul.plain li, ol.plain li{ color:var(--ink-soft); margin-bottom:0.5rem; }
+  ul.plain li::marker{ color:var(--rust); }
+  ul.tight li{ margin-bottom:0.3rem; }
+
+  code, .mono{ font-family:var(--font-mono); font-size:0.85em; }
+  .inline-code{ font-family:var(--font-mono); font-size:0.85em; background:var(--paper-deep); padding:0.1em 0.4em; border-radius:2px; color:var(--ink); }
+
+  /* ============ COVER ============ */
+  .cover{ min-height:100vh; display:flex; flex-direction:column; justify-content:center; padding:4rem 0; border-bottom:1px solid var(--line); }
+  .cover-eyebrow{ font-family:var(--font-mono); font-size:0.82rem; color:var(--ink-faint); margin-bottom:1.6rem; }
+  .cover h1{ font-size:3.6rem; line-height:1.05; max-width:13ch; margin-bottom:1.4rem; }
+  .cover p.deck{ font-size:1.25rem; color:var(--ink-soft); max-width:42ch; margin-bottom:2.6rem; }
+  .cover-meta{ display:flex; gap:2.4rem; font-size:0.85rem; color:var(--ink-faint); flex-wrap:wrap; }
+  .cover-meta div span{ display:block; color:var(--ink); font-weight:500; margin-bottom:0.15rem;}
+  .contract{ margin-top:3.2rem; display:grid; grid-template-columns:repeat(3,1fr); gap:0; border:1px solid var(--line); max-width:640px; }
+  .contract div{ padding:1rem 1.2rem; border-right:1px solid var(--line); }
+  .contract div:last-child{ border-right:none; }
+  .contract .k{ font-family:var(--font-mono); font-size:0.72rem; color:var(--rust); display:block; margin-bottom:0.35rem; }
+  .contract .v{ font-size:0.86rem; color:var(--ink-soft); line-height:1.45; }
+
+  /* ============ VISUAL SLOT ============ */
+  .visual-slot{ margin:1.6rem 0 2rem 0; border:1.5px dashed var(--line-strong); background:var(--paper-card); padding:2.4rem 1.8rem; max-width:66ch; }
+  .visual-slot .vs-label{ font-family:var(--font-mono); font-size:0.78rem; color:var(--rust); margin-bottom:0.5rem; }
+  .visual-slot .vs-desc{ font-size:0.88rem; color:var(--ink-faint); max-width:52ch; }
+
+  /* ============ TABLES ============ */
+  table.ledger{ width:100%; max-width:72ch; border-collapse:collapse; margin:1.2rem 0 1.8rem 0; font-size:0.88rem; }
+  table.ledger th{ text-align:left; font-family:var(--font-body); font-weight:600; color:var(--ink); border-bottom:1.5px solid var(--ink); padding:0.5rem 0.8rem 0.5rem 0; font-size:0.8rem; }
+  table.ledger td{ padding:0.55rem 0.8rem 0.55rem 0; border-bottom:1px solid var(--line); color:var(--ink-soft); vertical-align:top; }
+  table.ledger tr:hover td{ background:var(--paper-card); }
+  table.ledger td.mono-cell{ font-family:var(--font-mono); font-size:0.82em; color:var(--ink); white-space:nowrap; }
+  table.ledger td.tag{ font-weight:500; color:var(--ink); }
+  table.ledger.compact th, table.ledger.compact td{ padding-top:0.4rem; padding-bottom:0.4rem; font-size:0.82rem; }
+
+  .flag-critical{ color:var(--rust); font-weight:600; }
+  .flag-watch{ color:var(--amber); font-weight:600; }
+  .flag-clear{ color:var(--teal); font-weight:600; }
+
+  .status-pill{ display:inline-block; font-family:var(--font-mono); font-size:0.68rem; padding:0.15rem 0.55rem; border:1px solid currentColor; white-space:nowrap; }
+  .status-pill.shipped{ color:var(--teal); }
+  .status-pill.partial{ color:var(--amber); }
+  .status-pill.deferred{ color:var(--rust); }
+  .status-pill.declined{ color:var(--rust); }
+  .status-pill.planned{ color:var(--ink-faint); }
+  table.ledger td.status-cell{ text-align:left; }
+
+  /* ============ FLOW DIAGRAMS ============ */
+  .flow{ margin:1.4rem 0 2rem 0; max-width:74ch; }
+  .flow-row{ display:flex; align-items:stretch; gap:0; }
+  .flow-step{ flex:1; border:1px solid var(--ink); background:var(--paper-card); padding:0.8rem 0.85rem; }
+  .flow-step .fn{ display:block; font-family:var(--font-mono); font-size:0.68rem; color:var(--rust); margin-bottom:0.3rem; }
+  .flow-step h5{ font-family:var(--font-body); font-size:0.82rem; font-weight:600; margin-bottom:0.3rem; line-height:1.25; }
+  .flow-step p{ font-size:0.75rem; margin-bottom:0; color:var(--ink-soft); line-height:1.4; }
+  .flow-arrow{ flex:0 0 auto; display:flex; align-items:center; justify-content:center; width:28px; color:var(--ink-faint); font-size:1rem; }
+  .flow-row-arrow{ text-align:center; color:var(--ink-faint); font-size:1.1rem; margin:0.25rem 0; }
+  .flow-branch-label{ text-align:center; font-family:var(--font-mono); font-size:0.68rem; color:var(--ink-faint); margin:0.7rem 0 0.5rem 0; }
+  .flow-branch-row{ display:flex; gap:0.8rem; }
+  .flow-branch-box{ flex:1; border:1px solid var(--line); padding:0.75rem 0.85rem; }
+  .flow-branch-box.suppressed{ border-color:var(--ink-faint); background:var(--paper); }
+  .flow-branch-box.surfaced{ border-color:var(--teal); background:var(--paper-card); }
+  .flow-branch-box h5{ font-size:0.8rem; margin-bottom:0.3rem; }
+  .flow-branch-box h5.suppressed-title{ color:var(--ink-faint); }
+  .flow-branch-box h5.surfaced-title{ color:var(--teal); }
+  .flow-branch-box p{ font-size:0.75rem; margin:0; color:var(--ink-soft); }
+  .flow-note{ font-size:0.78rem; color:var(--ink-faint); margin-top:0.7rem; font-style:italic; }
+
+  /* ============ Q&A ACCORDION ============ */
+  .qa-group{ margin-bottom:2rem; max-width:74ch; }
+  .qa-group-title{ font-family:var(--font-mono); font-size:0.75rem; color:var(--rust); margin-bottom:0.7rem; text-transform:uppercase; letter-spacing:0.03em; }
+  .qa-item{ border:1px solid var(--line); margin-bottom:0.5rem; background:var(--paper-card); }
+  .qa-item summary{ padding:0.7rem 1rem; cursor:pointer; font-weight:500; font-size:0.88rem; color:var(--ink); list-style:none; display:flex; gap:0.6rem; align-items:baseline; }
+  .qa-item summary::-webkit-details-marker{ display:none; }
+  .qa-item summary::before{ content:'▸'; color:var(--rust); flex-shrink:0; transition:transform .15s ease; }
+  .qa-item[open] summary::before{ transform:rotate(90deg); }
+  .qa-item .qa-answer{ padding:0 1rem 1rem 2.1rem; font-size:0.85rem; color:var(--ink-soft); line-height:1.55; }
+  .qa-item .qa-answer code{ font-size:0.9em; }
+
+  /* ============ WORKED EXAMPLE BOX ============ */
+  .worked{ border:1px solid var(--ink); background:var(--paper-card); padding:1rem 1.2rem; margin:1rem 0 1.6rem 0; max-width:66ch; }
+  .worked .w-title{ font-family:var(--font-mono); font-size:0.72rem; color:var(--rust); margin-bottom:0.6rem; }
+  .worked .w-line{ display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:0.8rem; padding:0.25rem 0; border-bottom:1px dotted var(--line); }
+  .worked .w-line:last-child{ border-bottom:none; font-weight:600; color:var(--rust); }
+  .worked .w-line span:first-child{ color:var(--ink-faint); }
+
+  /* ============ CARDS / GRID ============ */
+  .grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:1.3rem; margin:1.6rem 0 2rem 0; max-width:72ch; }
+  .card{ border:1px solid var(--line); padding:1.2rem 1.3rem; background:var(--paper-card); }
+  .card h5{ font-family:var(--font-body); font-size:0.9rem; font-weight:600; margin-bottom:0.5rem; }
+  .card p{ font-size:0.85rem; margin-bottom:0; color:var(--ink-soft); }
+
+  /* ============ DATACLASS CARDS ============ */
+  .dc-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(190px,1fr)); gap:1.1rem; margin:1.6rem 0 1.4rem 0; max-width:100%; }
+  .dc-card{ border:1px solid var(--ink); background:var(--paper-card); display:flex; flex-direction:column; }
+  .dc-head{ background:var(--ink); color:var(--paper); padding:0.55rem 0.9rem; display:flex; justify-content:space-between; align-items:baseline; }
+  .dc-head .dc-name{ font-family:var(--font-mono); font-size:0.82rem; }
+  .dc-head .dc-src{ font-size:0.65rem; color:var(--paper-deep); opacity:0.8; }
+  .dc-body{ padding:0.9rem 0.9rem 1rem 0.9rem; flex:1; }
+  .dc-field{ display:flex; justify-content:space-between; gap:0.6rem; padding:0.38rem 0; border-bottom:1px dotted var(--line); font-size:0.8rem; }
+  .dc-field:last-child{ border-bottom:none; }
+  .dc-field .fk{ font-family:var(--font-mono); color:var(--ink-faint); font-size:0.74rem; }
+  .dc-field .fv{ color:var(--ink); font-weight:500; text-align:right; }
+  .dc-note{ font-size:0.7rem; color:var(--ink-faint); padding:0.5rem 0.9rem 0.7rem 0.9rem; border-top:1px solid var(--line); font-style:italic; }
+  .dc-card.computed{ border-color:var(--amber); }
+  .dc-card.computed .dc-head{ background:var(--amber); }
+  .dc-card.computed .dc-src{ color:var(--paper); opacity:0.85; }
+
+  /* ============ MECHANISM LIST ============ */
+  .mech{ display:grid; grid-template-columns:1.6rem 1fr; gap:0.3rem 1rem; max-width:66ch; margin-bottom:1.6rem; }
+  .mech .m-num{ font-family:var(--font-mono); color:var(--rust); font-size:0.85rem; padding-top:0.15rem; }
+  .mech .m-body h5{ font-family:var(--font-body); font-size:0.95rem; font-weight:600; margin-bottom:0.3rem; }
+  .mech .m-body p{ font-size:0.9rem; margin-bottom:0; }
+  .mech-item{ display:contents; }
+  .mech-item + .mech-item .m-num, .mech-item + .mech-item .m-body{ padding-top:1.3rem; border-top:1px solid var(--line); margin-top:1.3rem; }
+
+  /* ============ CALLOUT ============ */
+  .callout{ border-left:3px solid var(--rust); padding:0.9rem 1.3rem; background:var(--paper-card); max-width:60ch; margin:1.4rem 0; }
+  .callout p{ margin-bottom:0; font-size:0.9rem; }
+  .callout.teal{ border-left-color:var(--teal); }
+  .callout.amber{ border-left-color:var(--amber); }
+
+  .benefits-strip{ display:flex; flex-wrap:wrap; align-items:center; margin:0.8rem 0 1.8rem 0; font-size:0.92rem; color:var(--ink); font-weight:500; max-width:74ch; }
+  .benefits-strip .b-sep{ margin:0 0.65rem; color:var(--rust); font-weight:400; }
+
+  /* ============ DEMO CUE CARD ============ */
+  .cue-card{ border:1px solid var(--ink); max-width:66ch; margin-top:1.6rem; }
+  .cue-head{ background:var(--ink); color:var(--paper); padding:0.9rem 1.4rem; font-family:var(--font-mono); font-size:0.82rem; display:flex; justify-content:space-between; }
+  .cue-body{ padding:1.4rem; }
+  .cue-body ol{ margin-left:1.2rem; }
+  .cue-body li{ margin-bottom:0.7rem; font-size:0.92rem; color:var(--ink-soft); }
+  .cue-body li strong{ color:var(--ink); }
+
+  /* ============ QUOTE BLOCKS ============ */
+  .qblock{ border-left:1px solid var(--line); padding-left:1.3rem; margin-bottom:1.6rem; max-width:64ch; }
+  .qblock .qtext{ font-style:italic; color:var(--ink); font-size:0.98rem; margin-bottom:0.35rem; }
+  .qblock .qnote{ font-size:0.85rem; color:var(--ink-faint); }
+
+  /* ============ LIMITATIONS GROUPS ============ */
+  .lim-group{ margin-bottom:2.2rem; max-width:68ch; }
+  .lim-group h4{ margin-top:0; }
+  .lim-group ul{ margin-left:1.2rem; }
+  .lim-group li{ color:var(--ink-soft); margin-bottom:0.5rem; font-size:0.94rem; }
+  .lim-group li strong{ color:var(--ink); }
+
+  /* ============ CLOSING ============ */
+  .closing{ min-height:70vh; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; }
+  .closing h2{ font-size:2.8rem; margin-bottom:0; }
+  .closing p{ font-size:1.1rem; }
+  .closing-sub{ font-family:var(--font-display); font-size:1.8rem; font-weight:500; color:var(--ink-soft); max-width:none; }
+  .closing-rule{ width:56px; height:2px; background:var(--rust); margin-bottom:1.6rem; }
+  .closing-mark{ font-family:var(--font-mono); font-size:0.75rem; color:var(--ink-faint); letter-spacing:0.03em; margin-top:1.4rem; }
+
+  /* ============ SKELETON TABLE ============ */
+  .skeleton-wrap{ max-width:74ch; margin:1.2rem 0 1.8rem 0; }
+  .skeleton-tag{ font-family:var(--font-mono); font-size:0.72rem; color:var(--ink-faint); margin-bottom:0.5rem; }
+  table.skeleton{ width:100%; border-collapse:collapse; font-size:0.82rem; border:1px dashed var(--line-strong); }
+  table.skeleton th{ text-align:left; font-weight:600; color:var(--ink-faint); padding:0.5rem 0.7rem; border-bottom:1px dashed var(--line-strong); font-size:0.72rem; font-family:var(--font-mono); background:var(--paper-card); }
+  table.skeleton td{ padding:0.55rem 0.7rem; color:var(--ink-faint); border-bottom:1px dashed var(--line); font-family:var(--font-mono); font-size:0.78rem; }
+  table.skeleton td.state-name{ font-family:var(--font-body); color:var(--ink-soft); font-weight:500; }
+  table.skeleton tr:last-child td{ border-bottom:none; }
+
+  /* ============ JOURNEY ANIMATION ============ */
+  .journey-panel{ max-width:none; width:calc(100% + 140px); margin-top:1.2rem; border:1px solid var(--ink); background:var(--paper-card); }
+  .journey-head{ background:var(--ink); color:var(--paper); padding:0.7rem 1.2rem; display:flex; justify-content:space-between; align-items:baseline; font-family:var(--font-mono); font-size:0.78rem; }
+  .journey-body{ padding:1.6rem 1.6rem 1.2rem 1.6rem; }
+
+  /* ---- six fixed, evenly-spaced milestone markers (mirrors the live report's
+     journey timeline) - each shows forecast/actual stacked above planned, colored by
+     whether a flag has ever fired for that milestone, not by a one-off number. ---- */
+  .jy2-labels{ position:relative; height:2.9rem; margin-bottom:0.4rem; }
+  .jy2-label{
+    position:absolute; bottom:0; transform:translateX(-50%);
+    display:flex; flex-direction:column; align-items:center; gap:1px;
+    white-space:nowrap; padding-bottom:0.3rem; border-bottom:2px solid transparent;
+    transition:border-color .25s ease;
+  }
+  .jy2-name{ font-size:0.6rem; letter-spacing:0.03em; text-transform:uppercase; color:var(--ink-faint); }
+  .jy2-top, .jy2-planned{ font-size:0.66rem; font-variant-numeric:tabular-nums; color:var(--ink-soft); }
+  .jy2-word{ font-style:italic; opacity:0.65; }
+  .jy2-red{ color:var(--rust); font-weight:600; }
+  .jy2-green{ color:var(--teal); font-weight:600; }
+  .jy2-label.jy2-done .jy2-name{ color:var(--ink); }
+  .jy2-label.jy2-on{ border-bottom-color:var(--rust); }
+  .jy2-label.jy2-on .jy2-name{ color:var(--rust); font-weight:700; }
+
+  .jy2-track-wrap{ position:relative; height:110px; margin-bottom:0.3rem; }
+  .jy2-line{ position:absolute; top:58px; left:0; right:0; height:2px; background:var(--line); }
+  .jy2-fill{ position:absolute; top:58px; left:0; height:2px; background:var(--rust); transition:width .4s ease; }
+  .jy2-point{ position:absolute; top:52px; width:12px; height:12px; border-radius:50%; background:var(--paper-card); border:2px solid var(--ink); transform:translateX(-50%); z-index:2; }
+  .jy2-point.jy2-done{ background:var(--ink); }
+  .truck{ position:absolute; top:24px; width:50px; height:26px; transform:translateX(-50%); transition:left .5s cubic-bezier(.4,0,.2,1); left:0%; z-index:3; }
+
+  /* flags sit below the line, at the fixed marker for the milestone they fired on -
+     above is already spoken for by the forecast/planned label stack */
+  .jy2-flag{
+    display:none; position:absolute; top:66px; width:15px; height:20px; transform:translateX(-50%);
+    cursor:pointer; z-index:5; color:var(--rust);
+  }
+  .jy2-flag.show{ display:block; }
+  .jy2-flag::after{ content:''; position:absolute; left:50%; top:-6px; width:1px; height:6px; background:currentColor; opacity:.5; }
+  .jy2-pin{ display:block; width:100%; height:100%; }
+  .flag-popup{
+    display:none; position:absolute; bottom:24px; left:50%; transform:translateX(-50%);
+    width:270px; background:var(--ink); color:var(--paper); padding:0.7rem 0.9rem;
+    font-size:0.72rem; line-height:1.55; z-index:20; box-shadow:0 3px 10px rgba(0,0,0,0.28);
+  }
+  .flag-popup.show{ display:block; }
+  .flag-popup::after{ content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%); border:6px solid transparent; border-top-color:var(--ink); }
+  .flag-popup .fp-title{ font-family:var(--font-mono); color:var(--rust-soft); margin-bottom:0.45rem; font-weight:600; }
+  .flag-popup .fp-line{ margin-bottom:0.4rem; }
+  .flag-popup .fp-line:last-of-type{ margin-bottom:0; }
+  .flag-popup .fp-close{ position:absolute; top:0.4rem; right:0.6rem; cursor:pointer; color:var(--paper-deep); font-size:0.85rem; line-height:1; }
+  .axis-daymark{ position:absolute; top:0; bottom:0; width:0; border-left:1px dashed var(--line-strong); z-index:1; }
+  .axis-daymark span{ position:absolute; top:-1.1rem; left:0; transform:translateX(-50%); font-family:var(--font-mono); font-size:0.65rem; color:var(--ink-faint); white-space:nowrap; }
+
+  .route-meta-row{ display:flex; justify-content:space-between; align-items:baseline; margin:0.6rem 0 1rem 0; }
+  .wake-label{ font-family:var(--font-mono); font-size:0.78rem; color:var(--rust); }
+  .wake-ts{ font-size:0.78rem; color:var(--ink-faint); }
+
+  .caption-box{ min-height:2.6rem; font-size:0.88rem; color:var(--ink-soft); margin-bottom:1rem; padding:0.6rem 0.9rem; background:var(--paper); border-left:2px solid var(--line-strong); }
+
+  .incident-banner{
+    display:none; flex-direction:column; gap:0.5rem;
+    border:1px solid var(--rust); background:#F3E4DA;
+    padding:0.65rem 0.9rem; margin-bottom:1rem;
+  }
+  .incident-banner.show{ display:flex; }
+  .incident-line{ display:flex; align-items:flex-start; gap:0.7rem; font-size:0.85rem; color:var(--rust); }
+  .incident-line .ib-dot{ width:8px; height:8px; border-radius:50%; background:var(--rust); flex-shrink:0; margin-top:0.4em; }
+
+  .controls-row{ display:flex; align-items:center; gap:0.9rem; margin-bottom:1.3rem; }
+  .ctrl-btn{
+    font-family:var(--font-mono); font-size:0.75rem; background:var(--paper); border:1px solid var(--ink);
+    color:var(--ink); padding:0.4rem 0.7rem; cursor:pointer;
+  }
+  .ctrl-btn:hover{ background:var(--ink); color:var(--paper); }
+  .ctrl-btn:disabled{ opacity:0.35; cursor:default; }
+  .ctrl-btn:disabled:hover{ background:var(--paper); color:var(--ink); }
+
+  input[type=range]{ flex:1; -webkit-appearance:none; height:2px; background:var(--line-strong); outline:none; }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+    background:var(--rust); cursor:pointer; border:2px solid var(--paper-card);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:16px; height:16px; border-radius:50%; background:var(--rust); cursor:pointer; border:2px solid var(--paper-card);
+  }
+
+  table.state-table{ width:100%; table-layout:fixed; border-collapse:collapse; font-size:0.72rem; }
+  table.state-table th{ text-align:left; font-weight:600; color:var(--ink); border-bottom:1.5px solid var(--ink); padding:0.4rem 0.35rem 0.4rem 0; font-size:0.64rem; font-family:var(--font-mono); overflow:hidden; text-overflow:ellipsis; }
+  table.state-table td{ padding:0.45rem 0.35rem 0.45rem 0; border-bottom:1px solid var(--line); font-family:var(--font-mono); font-size:0.66rem; color:var(--ink-soft); white-space:normal; word-break:break-word; line-height:1.3; }
+  table.state-table td.st-name{ font-family:var(--font-body); font-weight:500; color:var(--ink); font-size:0.74rem; white-space:normal; }
+  table.state-table tr.active td{ background:var(--paper-deep); }
+  table.state-table tr.active td.st-name{ color:var(--rust); font-weight:600; }
+  table.state-table td.cell-updated{ background:#FFDD00; color:var(--ink); font-weight:bold; }
+  table.state-table th:nth-child(1), table.state-table td:nth-child(1){ width:16%; }
+  table.state-table th:nth-child(2), table.state-table td:nth-child(2){ width:13%; }
+  table.state-table th:nth-child(3), table.state-table td:nth-child(3){ width:15%; }
+  table.state-table th:nth-child(4), table.state-table td:nth-child(4){ width:15%; }
+  table.state-table th:nth-child(5), table.state-table td:nth-child(5){ width:15%; }
+  table.state-table th:nth-child(6), table.state-table td:nth-child(6){ width:15%; }
+  table.state-table th:nth-child(7), table.state-table td:nth-child(7){ width:11%; }
+  .state-table-wrap{ width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .st-done{ color:var(--teal); font-weight:600; }
+  .st-pending{ color:var(--ink-faint); }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 900px){
+    .rail{ position:relative; width:100%; height:auto; flex-direction:row; overflow-x:auto; padding:1rem 1.2rem; align-items:center; }
+    .rail-sub, .rail-foot{ display:none; }
+    .rail-nav{ flex-direction:row; gap:0.2rem; }
+    .rail-link{ white-space:nowrap; border-left:none; border-bottom:2px solid transparent; }
+    .rail-link.active{ border-left:none; border-bottom-color:var(--rust); }
+    .main{ margin-left:0; padding:0 1.6rem; }
+    .contract{ grid-template-columns:1fr; }
+    .contract div{ border-right:none; border-bottom:1px solid var(--line); }
+    .grid-3, .dc-grid{ grid-template-columns:1fr; }
+    .cover h1{ font-size:2.4rem; }
+    table.state-table{ font-size:0.68rem; }
+    .flow-row{ flex-direction:column; }
+    .flow-arrow{ width:auto; transform:rotate(90deg); padding:0.3rem 0; }
+    .flow-branch-row{ flex-direction:column; }
+    .journey-panel{ width:100%; margin-left:0; }
+  }
+
+</style>
+</head>
+<body>
+
+  <!-- ============ RAIL ============ -->
+  <nav class="rail">
+    <div class="rail-mark">Watcher<span>.</span></div>
+    <div class="rail-sub">Truck Milestone Watcher</div>
+    <div class="rail-nav" id="railNav">
+      <a class="rail-link" href="#s01"><span class="num">01</span><span class="label">Problem &amp; solution</span></a>
+      <a class="rail-link" href="#s02"><span class="num">02</span><span class="label">Digital twin walkthrough</span></a>
+      <a class="rail-link" href="#s03"><span class="num">03</span><span class="label">Live demo</span></a>
+      <a class="rail-link" href="#s04"><span class="num">04</span><span class="label">Data model</span></a>
+      <a class="rail-link" href="#s05"><span class="num">05</span><span class="label">LLM cost &amp; guardrails</span></a>
+      <a class="rail-link" href="#s06"><span class="num">06</span><span class="label">Deep dive</span></a>
+      <a class="rail-link" href="#s07"><span class="num">07</span><span class="label">What's next</span></a>
+      <a class="rail-link" href="#s08"><span class="num">08</span><span class="label">Thank you</span></a>
+    </div>
+  </nav>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+
+    <!-- COVER -->
+    <section class="cover" id="cover">
+      <div class="cover-eyebrow">SemiCab - Ishika Gupta</div>
+      <h1>Truck Milestone<br>Watcher</h1>
+      <p class="deck">A shadow-mode digital twin that watches active loads every wake, and tells ops what needs attention before it gets escalated on the customer side.</p>
+      <div class="contract">
+        <div><span class="k">Read</span><span class="v">Ops MySQL - load_tender, load_stop, location_log, organization</span></div>
+        <div><span class="k">Write</span><span class="v">Internal SQLite only. Nothing goes back to ops.</span></div>
+        <div><span class="k">Recommend</span><span class="v">A ranked, plain-language report.html for the ops team</span></div>
+      </div>
+    </section>
+
+    <!-- ============ 01 PROBLEM & SOLUTION ============ -->
+    <section id="s01">
+      <div class="kicker">01 - Problem &amp; solution</div>
+      <h2 class="title">Nobody knew a load was stuck until the customer called</h2>
+      <p class="lede">Problem: ops monitors assigned and in-transit loads by repeatedly going through a live database - every check starts from zero, and there is no definition of what is normal versus an incident.</p>
+
+      <p class="tight">Solution: A watcher that tells us "What status is the truck currently in, what status should happen next, when should it happen, has it happened, and does Operations need to intervene?".</p>
+
+      <div class="benefits-strip">
+        <span class="b-item">No repetitive manual checks</span><span class="b-sep">|</span>
+        <span class="b-item">Less human error at scale</span><span class="b-sep">|</span>
+        <span class="b-item">Consistent judgment, no bias involved</span><span class="b-sep">|</span>
+        <span class="b-item">Memory of what's normal, not a blank slate every time</span>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <h5>Deterministic core</h5>
+          <p>Canonical status, ETA, five flags. Pure code, no LLM.</p>
+        </div>
+        <div class="card">
+          <h5>Investigator agent</h5>
+          <p>Claude triages a load only once a flag has fired - noise or real problem?</p>
+        </div>
+        <div class="card">
+          <h5>Report agent</h5>
+          <p>One ranked report per batch - attention queue, load evaluations, recommended actions.</p>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ============ 02 DIGITAL TWIN WALKTHROUGH ============ -->
+    <section id="s02">
+      <div class="kicker">02 - Digital twin walkthrough</div>
+      <h2 class="title">Following one load through its journey in our watcher</h2>
+      <p class="lede">Every wake, for every active load, the watcher rebuilds a small digital twin of that load's journey.</p>
+
+      <h3 class="sub">What gets fetched</h3>
+
+      <div class="dc-grid">
+        <div class="dc-card">
+          <div class="dc-head"><span class="dc-name">LoadData</span><span class="dc-src">load_tender</span></div>
+          <div class="dc-body">
+            <div class="dc-field"><span class="fk">load_id</span><span class="fv">62754</span></div>
+            <div class="dc-field"><span class="fk">origin</span><span class="fv">RAJPURA</span></div>
+            <div class="dc-field"><span class="fk">destination</span><span class="fv">CHENNAI</span></div>
+            <div class="dc-field"><span class="fk">status</span><span class="fv">in-transit</span></div>
+            <div class="dc-field"><span class="fk">sub_status</span><span class="fv">ENROUTE_PICKUP</span></div>
+            <div class="dc-field"><span class="fk">canonical</span><span class="fv">ENROUTE_PICKUP</span></div>
+          </div>
+          <div class="dc-note">+ carrier, shipper, vehicle, coordinates</div>
+        </div>
+        <div class="dc-card">
+          <div class="dc-head"><span class="dc-name">TimeData</span><span class="dc-src">tender ⋈ stop ⋈ event</span></div>
+          <div class="dc-body">
+            <div class="dc-field"><span class="fk">planned_pickup</span><span class="fv">Sep 8, 8:00 PM</span></div>
+            <div class="dc-field"><span class="fk">committed_pickup</span><span class="fv">Sep 8, 8:00 PM</span></div>
+            <div class="dc-field"><span class="fk">planned_dropoff</span><span class="fv">Sep 10, 2:00 AM</span></div>
+            <div class="dc-field"><span class="fk">committed_dropoff</span><span class="fv">Sep 10, 2:00 AM</span></div>
+          </div>
+          <div class="dc-note">vh_assigned: Sep 8, 2:00 PM, actuals</div>
+        </div>
+        <div class="dc-card">
+          <div class="dc-head"><span class="dc-name">GPSData</span><span class="dc-src">location_log</span></div>
+          <div class="dc-body">
+            <div class="dc-field"><span class="fk">data_source</span><span class="fv">TELEMATICS</span></div>
+            <div class="dc-field"><span class="fk">latitude</span><span class="fv">30.4802</span></div>
+            <div class="dc-field"><span class="fk">longitude</span><span class="fv">76.5341</span></div>
+            <div class="dc-field"><span class="fk">last_activity</span><span class="fv">2 min ago</span></div>
+            <div class="dc-field"><span class="fk">live</span><span class="fv">true</span></div>
+          </div>
+          <div class="dc-note">example ping - approaching Rajpura</div>
+        </div>
+        <div class="dc-card computed">
+          <div class="dc-head"><span class="dc-name">ETAData</span><span class="dc-src">computed, not fetched</span></div>
+          <div class="dc-body">
+            <div class="dc-field"><span class="fk">load_id</span><span class="fv">62754</span></div>
+            <div class="dc-field"><span class="fk">vh_id</span><span class="fv">V-4471</span></div>
+            <div class="dc-field"><span class="fk">ETA_value</span><span class="fv">Sep 8, 7:30 PM</span></div>
+            <div class="dc-field"><span class="fk">ETA_of</span><span class="fv">pickup</span></div>
+            <div class="dc-field"><span class="fk">calculated_at</span><span class="fv">this wake</span></div>
+          </div>
+          <div class="dc-note">derived via haversine × road factor ÷ speed - full formula in section 08</div>
+        </div>
+      </div>
+
+      <h3 class="sub">The journey model</h3>
+      <p class="tight">Six canonical statuses. The ledger keeps <strong>five rows</strong> - none for the terminal state, since reaching it simply closes the watch.</p>
+
+      <div class="skeleton-wrap">
+        <div class="skeleton-tag">state_rows - skeleton, before any wake has run</div>
+        <table class="skeleton">
+          <tr><th>state</th><th>next state</th><th>planned</th><th>committed</th><th>forecasted</th><th>actual</th><th>completed</th></tr>
+          <tr><td class="state-name">ASSIGNED</td><td>ENROUTE_PICKUP</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+          <tr><td class="state-name">ENROUTE_PICKUP</td><td>AT_PICKUP</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+          <tr><td class="state-name">AT_PICKUP</td><td>LOADED</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+          <tr><td class="state-name">LOADED</td><td>ENROUTE_DROPOFF</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+          <tr><td class="state-name">ENROUTE_DROPOFF</td><td>AT_DROPOFF</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+        </table>
+      </div>
+
+      <h4 class="micro">Five fields, every row</h4>
+      <ul class="plain tight">
+        <li><span class="inline-code">planned</span> - our internal schedule</li>
+        <li><span class="inline-code">committed</span> - the customer appointment</li>
+        <li><span class="inline-code">forecasted</span> - live GPS ETA, or a copy of planned when there's no signal</li>
+        <li><span class="inline-code">actual</span> - ops evidence; empty ≠ incomplete</li>
+        <li><span class="inline-code">completed</span> - true once canonical status has moved past this row</li>
+      </ul>
+      <table class="ledger compact" style="max-width:64ch;">
+        <tr><th>Constant</th><th>Value</th><th>Role</th></tr>
+        <tr><td class="mono-cell">DISPATCH_THRESH</td><td class="mono-cell">2h</td><td>ASSIGNED planned; also added on top of PICKUP_DWELL for LOADED planned</td></tr>
+        <tr><td class="mono-cell">PICKUP_DWELL</td><td class="mono-cell">18h</td><td>AT_PICKUP planned</td></tr>
+        <tr><td class="mono-cell">OPERATIONAL_GRACE</td><td class="mono-cell">30min</td><td>Overdue threshold</td></tr>
+        <tr><td class="mono-cell">GPS_STALE_AFTER</td><td class="mono-cell">1h</td><td>Stale-GPS threshold</td></tr>
+        <tr><td class="mono-cell">ARRIVAL_PROXIMITY_KM</td><td class="mono-cell">1.0 km</td><td>Conflict radius</td></tr>
+        <tr><td class="mono-cell">DOMINO_MIN_SLIP</td><td class="mono-cell">30min</td><td>Floor before a delay cascades downstream</td></tr>
+        <tr><td class="mono-cell">DROPOFF_RISK_MARGIN</td><td class="mono-cell">1h</td><td>AT_RISK vs BREACH_LIKELY cutoff</td></tr>
+      </table>
+      <p style="font-size:0.75rem; color:var(--ink-faint); margin-top:-1.2rem;">All from <span class="inline-code">constants.py</span></p>
+
+      <h3 class="sub">The journey, wake by wake</h3>
+      <p class="tight">*The watcher wakes up every 2 hours in this walkthrough*</p>
+
+      <div class="journey-panel">
+        <div class="journey-head"><span id="jhLoad">load_id 62754 · RAJPURA → CHENNAI</span><span id="jhState">ENROUTE_PICKUP</span></div>
+        <div class="journey-body">
+
+          <div class="jy2-labels" id="jy2Labels"></div>
+
+          <div class="jy2-track-wrap" id="jy2TrackWrap">
+            <div class="axis-daymark" id="dayMark"><span>Sep 9</span></div>
+            <div class="axis-daymark" id="dayMark2"><span>Sep 10</span></div>
+            <div class="jy2-line"></div>
+            <div class="jy2-fill" id="jy2Fill"></div>
+
+            <div class="truck" id="truck" style="left:2%">
+              <svg viewBox="0 0 60 30" width="50" height="26">
+                <rect x="2" y="8" width="32" height="14" rx="1.5" fill="#A8461F"/>
+                <path d="M34 10 h12 a2 2 0 0 1 2 2 v8 a2 2 0 0 1 -2 2 h-12 z" fill="#1C2530"/>
+                <rect x="38" y="13" width="7" height="5" fill="#E9E6DA" opacity="0.85"/>
+                <circle cx="13" cy="24" r="4" fill="#1C2530"/>
+                <circle cx="13" cy="24" r="1.6" fill="#E9E6DA"/>
+                <circle cx="44" cy="24" r="4" fill="#1C2530"/>
+                <circle cx="44" cy="24" r="1.6" fill="#E9E6DA"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="route-meta-row">
+            <span class="wake-label" id="wakeLabel">WAKE 1 / 16</span>
+            <span class="wake-ts" id="wakeTs">Sep 8, 2:00 PM</span>
+          </div>
+
+          <div class="incident-banner" id="incidentBanner">
+            <div id="incidentList"></div>
+          </div>
+
+          <div class="controls-row">
+            <button class="ctrl-btn" id="prevBtn">◂ prev</button>
+            <input type="range" id="wakeSlider" min="0" max="15" value="0" step="1">
+            <button class="ctrl-btn" id="nextBtn">next ▸</button>
+          </div>
+
+          <div class="state-table-wrap">
+            <table class="state-table">
+              <thead><tr><th>state</th><th>next</th><th>planned</th><th>committed</th><th>forecasted</th><th>actual</th><th>done</th></tr></thead>
+              <tbody id="stateTableBody"></tbody>
+            </table>
+          </div>        </div>
+      </div>
+
+      <h3 class="sub">The five incidents</h3>
+      <table class="ledger">
+        <tr><th>Incident</th><th>Fires when</th></tr>
+        <tr><td class="tag">Transition overdue</td><td>Now is past <span class="inline-code">planned + 30 min</span> on the active row</td></tr>
+        <tr><td class="tag">Commitment risk</td><td>En route only - <span class="inline-code">forecasted &gt; committed</span> is <strong>AT_RISK</strong>; <span class="inline-code">now &gt; committed</span> with no arrival is<strong> BREACHED</strong></td></tr>
+        <tr><td class="tag">Stale GPS</td><td>A live tracker hasn't pinged in over an hour</td></tr>
+        <tr><td class="tag">Status–GPS conflict</td><td>Live position disagrees with the claimed stop by more than 1&nbsp;km</td></tr>
+        <tr><td class="tag">Dropoff risk</td><td>The active row's delay, rolled forward onto every future milestone, pushed the forecasted dropoff arrival past the committed appointment</td></tr>
+      </table>
+      <p style="font-size:0.85rem; color:var(--ink-faint); margin-top:-0.6rem;">FASTAG pings never count as live - they mark evidence unavailable, not stale.
+
+      <h3 class="sub">The investigator</h3>
+      <p class="tight">Runs only <strong>after</strong> a flag fires - a healthy load never costs an LLM call.</p>
+
+      <p class="tight">It decides whether an incident is genuinely concerning or a normal occurence for this carrier/lane and may be suppressed.</p>
+
+      <h4 class="micro">What happens when an incident is triggered?</h4>
+      <div class="flow">
+        <div class="flow-row">
+          <div class="flow-step">
+            <span class="fn">1</span>
+            <h5>Flag fires</h5>
+            <p>e.g. TRANSITION_OVERDUE if now &gt; planned + 30 min.</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <span class="fn">2</span>
+            <h5>Incident upserts OPEN</h5>
+            <p>Key = load · state · type. Reopens if it was previously resolved.</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <span class="fn">3</span>
+            <h5>Investigator triages</h5>
+            <p>Claude decides severity and whether this is noise.</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <span class="fn">4</span>
+            <h5>Memory written</h5>
+            <p>The investigator table gets severity, narrative, and suppressed from step 3.</p>
+          </div>
+        </div>
+        <div class="flow-branch-label">then, one of two paths</div>
+        <div class="flow-branch-row">
+          <div class="flow-branch-box suppressed">
+            <h5 class="suppressed-title">Suppressed</h5>
+            <p>Stays in the database. Never shown to ops.</p>
+          </div>
+          <div class="flow-branch-box surfaced">
+            <h5 class="surfaced-title">Surfaced</h5>
+            <p>Appears in the report's attention queue, ranked by severity.</p>
+          </div>
+        </div>
+        <p class="flow-note">An incident is resolved once the flag stops firing, or the row's active state moves on.</p>
+      </div>
+
+    </section>
+
+    <!-- ============ 03 LIVE DEMO ============ -->
+    <section id="s03">
+      <div class="kicker">03 - Live demo</div>
+      <h2 class="title">Now, the watcher working live</h2>
+      <p class="lede">Switching to the terminal - running one full wake against a live batch of loads.</p>
+
+      <div class="cue-card">
+        <div class="cue-head"></div>
+        <div class="cue-body">
+          <ol>
+            <li><strong>List the batch</strong> - console prints the active load IDs from ops.</li>
+            <li><strong>Per-load evaluation</strong> - a load that stays quiet next to one that fires a flag.</li>
+            <li><strong>Investigator firing</strong> - severity and latency for that call, live.</li>
+            <li><strong>Close-out</strong> - a load that completes this wake and drops into fleet memory.</li>
+            <li><strong>Report write</strong> - open <span class="inline-code">report.html</span>, walk the attention queue.</li>
+          </ol>
+        </div>
+      </div>
+
+      <h3 class="sub">Reading the console output</h3>
+      <table class="ledger compact" style="max-width:100%;">
+        <tr><th>Console line</th><th>Meaning</th></tr>
+        <tr><td class="mono-cell" style="white-space:normal;">SKIP {id}: untracked terminal status.</td><td>Load was already at its terminal status the first time the watcher ever saw it - no watch is opened, there's nothing to track.</td></tr>
+        <tr><td class="mono-cell" style="white-space:normal;">SKIP {id}: journey complete, no ACTIVE watch.</td><td>Load is terminal now, but the watcher had no ACTIVE watch open for it (already closed, or never tracked) - nothing to close.</td></tr>
+        <tr><td class="mono-cell" style="white-space:normal;">COMPLETED WATCH for load {id}.</td><td>The watch was ACTIVE and this wake pushed the load to its terminal status - open incidents resolve, the watch closes, and a closed episode is written to fleet memory.</td></tr>
+        <tr><td class="mono-cell" style="white-space:normal;">Investigator: {id} severity=… latency_ms=…</td><td>At least one flag fired on this load, so Claude was actually called to triage it - overall severity and call latency printed live.</td></tr>
+      </table>
+
+      <h3 class="sub">How a recommended action is chosen</h3>
+      <p class="tight">Every firing incident starts with a deterministic action tag - no LLM. The investigator can only replace it.</p>
+      <table class="ledger compact">
+        <tr><th>Incident</th><th>Deterministic fallback</th></tr>
+        <tr><td class="tag">Transition overdue</td><td class="mono-cell">CHECK_STATUS_WITH_CARRIER</td></tr>
+        <tr><td class="tag">Commitment risk</td><td class="mono-cell">ESCALATE_CUSTOMER_COMMITMENT</td></tr>
+        <tr><td class="tag">Stale GPS</td><td class="mono-cell">VERIFY_TRACKER</td></tr>
+        <tr><td class="tag">Status–GPS conflict</td><td class="mono-cell">VERIFY_LOCATION_VS_STATUS</td></tr>
+        <tr><td class="tag">Dropoff risk</td><td class="mono-cell">NOTIFY_CUSTOMER_OF_RISK</td></tr>
+      </table>
+      <div class="callout">
+        <p><strong>The LLM only overrides this when it has something more specific to say.</strong> If the investigator ran and rated the load ELEVATED or CRITICAL, its own plain-language <span class="inline-code">recommended_action</span> (who to call, what to check) replaces the generic tag for that incident.</p>
+      </div>
+    </section>
+
+    <!-- ============ 04 DATA MODEL ============ -->
+    <section id="s04">
+      <div class="kicker">04 - Data model</div>
+      <h2 class="title">Six tables, three tiers of memory</h2>
+      <p class="lede">Internal SQLite is the only thing that survives between wakes. Everything else is rebuilt fresh every run.</p>
+
+      <div class="grid-3">
+        <div class="card"><h5>Live ledger</h5><p>watches · state_rows · incidents. Every wake, every load in flight.</p></div>
+        <div class="card"><h5>Investigator diary</h5><p>investigator_runs. This load's own triage history.</p></div>
+        <div class="card"><h5>Fleet history</h5><p>load_memory · pattern_store. Written only on close.</p></div>
+      </div>
+
+      <table class="ledger" style="max-width:100%;">
+        <tr><th>Table</th><th>Holds</th><th>Written</th><th>Read</th></tr>
+        <tr><td class="tag mono-cell">watches</td><td>Header - active/completed, three health dimensions</td><td>First sight, every eval, close on arrival</td><td>Every wake (active-watch check); by the report agent</td></tr>
+        <tr><td class="tag mono-cell">state_rows</td><td>Five milestone rows - clocks and completion</td><td>Skeleton first, refreshed every wake</td><td>Every wake, before refreshing clocks</td></tr>
+        <tr><td class="tag mono-cell">incidents</td><td>One durable row per load · state · type - never deleted</td><td>Upserted while firing, resolved when clear</td><td>Every wake, to resolve/reopen; by the report agent</td></tr>
+        <tr><td class="tag mono-cell">investigator_runs</td><td>Prompt + output JSON, one successful triage</td><td>Successful investigator calls only</td><td>By the investigator, this load's next triage call</td></tr>
+        <tr><td class="tag mono-cell">load_memory</td><td>One closed episode - delay, commitment outcome, severity trajectory</td><td>Watch close only</td><td>By the investigator, only when triaging a flagged load</td></tr>
+        <tr><td class="tag mono-cell">pattern_store</td><td>Rolling delay stats by carrier / lane / shipper, per state</td><td>Watch close only</td><td>By the investigator, only when triaging a flagged load</td></tr>
+      </table>
+
+      <ul class="plain tight">
+        <li><strong>Live ledger</strong> answers <em>"where is this load."</em></li>
+        <li><strong>Investigator diary</strong> answers <em>"what have we already told ops."</em></li>
+        <li><strong>Fleet history</strong> answers <em>"what's normal here"</em> - gated at three closed loads, so one unlucky delivery can't read as a fleet trend.</li>
+      </ul>
+
+    </section>
+
+    <!-- ============ 05 EVALS, COST, GUARDRAILS ============ -->
+    <section id="s05">
+      <div class="kicker">05 - LLM cost &amp; guardrails</div>
+      <h2 class="title">Making the LLM layer trustworthy, not just capable</h2>
+      <p class="lede">The deterministic core is the source of truth by design. What happens when the LLM layer goes wrong?</p>
+
+      <h3 class="sub">Guardrails already in place</h3>
+      <div class="mech">
+        <div class="mech-item">
+          <div class="m-num">01</div>
+          <div class="m-body"><h5>Forced structured output</h5><p>Both agents are forced to call a fixed-schema tool - no free-text output reaches the report.</p></div>
+        </div>
+        <div class="mech-item">
+          <div class="m-num">02</div>
+          <div class="m-body"><h5>Findings retained internally, never dropped</h5><p>A suppressed finding for a firing flag still exists in the incidents table.</p></div>
+        </div>
+        <div class="mech-item">
+          <div class="m-num">03</div>
+          <div class="m-body"><h5>The deterministic core is untouchable</h5><p>The investigator only interprets and labels a flag - it can never change whether it fired, delete it, or alter canonical status.</p></div>
+        </div>
+        <div class="mech-item">
+          <div class="m-num">04</div>
+          <div class="m-body"><h5>Deterministic fallbacks handle failures</h5><p>Any exception, missing key, or bad tool call falls back to deterministic path to the output. The wake continues either way.</p></div>
+        </div>
+      </div>
+
+      <h3 class="sub">Cost &amp; time</h3>
+      <p class="tight">Every LLM call is recorded per batch - agent, model, latency, input/output tokens.</p>
+      <table class="ledger compact">
+        <tr><th>Metric</th><th>Tracked how</th></tr>
+        <tr><td class="tag">Latency</td><td>Time taken per call, averaged across the batch</td></tr>
+        <tr><td class="tag">Tokens</td><td>Input + output, summed across the batch for both agents</td></tr>
+        <tr><td class="tag">Call volume</td><td>Investigator vs. report calls, per wake</td></tr>
+      </table>
+
+    </section>
+
+    <!-- ============ 06 DEEP DIVE & HARD QUESTIONS ============ -->
+    <section id="s06">
+      <div class="kicker">06 - Deep dive</div>
+      <h2 class="title">Looking under the hood</h2>
+      <p class="lede">Exact logic for the calculations.</p>
+
+      <h3 class="sub">How ETA is actually calculated</h3>
+      <div class="mech">
+        <div class="mech-item">
+          <div class="m-num">01</div>
+          <div class="m-body"><h5>Straight-line distance</h5><p>Haversine distance between the latest GPS ping and the target - using latitude and longitude coordinates.</p></div>
+        </div>
+        <div class="mech-item">
+          <div class="m-num">02</div>
+          <div class="m-body"><h5>Road factor</h5><p>Straight-line distance × <span class="inline-code">ROAD_DISTANCE_FACTOR</span> (1.3) - a fixed multiplier approximating real road distance over highway straight-line.</p></div>
+        </div>
+        <div class="mech-item">
+          <div class="m-num">03</div>
+          <div class="m-body"><h5>Speed, with a floor</h5><p>Uses the GPS-reported live speed if it's at least <span class="inline-code">MIN_ETA_SPEED_KPH</span> (25 km/h); otherwise falls back to a flat <span class="inline-code">DEFAULT_SPEED_KPH</span> (40 km/h).</p></div>
+        </div>
+        <div class="mech-item">
+          <div class="m-num">04</div>
+          <div class="m-body"><h5>Hours to arrival</h5><p>Road distance ÷ speed = hours; added to now for <span class="inline-code">forecasted</span>. If GPS or target coordinates are missing, ETA stays unset - never a guess.</p></div>
+        </div>
+      </div>
+
+      <div class="worked">
+        <div class="w-title">Worked example</div>
+        <div class="w-line"><span>Straight-line to dropoff</span><span>340 km</span></div>
+        <div class="w-line"><span>× road factor (1.3)</span><span>442 km</span></div>
+        <div class="w-line"><span>Live speed reported</span><span>8 km/h → below floor, use 40</span></div>
+        <div class="w-line"><span>Hours to arrival</span><span>442 ÷ 40 = 11.05h</span></div>
+      </div>
+
+      <h3 class="sub">How severity is computed</h3>
+      <p class="tight">Two layers - a numeric score and a categorical judgment - feeding one ranked queue.</p>
+
+      <div class="mech">
+        <div class="mech-item">
+          <div class="m-num">01</div>
+          <div class="m-body">
+            <h5>Deterministic score - <span class="inline-code">_severity()</span></h5>
+            <ul class="plain tight">
+              <li><strong>Where:</strong> <span class="inline-code">report_agent.py</span>, every load, every wake - runs whether or not the investigator did.</li>
+              <li><strong>Computation:</strong> weighted point sum - investigator rank if it ran (<span class="inline-code">CRITICAL 400 / ELEVATED 300 / WATCH 200 / CLEAR 0</span>) + commitment <span class="inline-code">BREACHED +100</span>/<span class="inline-code">AT_RISK +80</span> + dropoff risk <span class="inline-code">+70</span>/<span class="inline-code">+60</span> + conflict <span class="inline-code">+50</span> + overdue <span class="inline-code">+60</span> + stale GPS <span class="inline-code">+30</span> + unmapped <span class="inline-code">+20</span> + <span class="inline-code">+5</span> per open incident.</li>
+              <li><strong>Used for:</strong> sorting the attention queue, highest first - before the report-writing model ever sees the batch.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="mech-item">
+          <div class="m-num">02</div>
+          <div class="m-body">
+            <h5>Investigator's judgment - <span class="inline-code">overall_severity</span></h5>
+            <ul class="plain tight">
+              <li><strong>Where:</strong> <span class="inline-code">investigator.py</span>, only once a flag has fired.</li>
+              <li><strong>Computation:</strong> Claude reads the flag(s), clocks, and calibrated carrier/lane/shipper history, returns <span class="inline-code">CLEAR | WATCH | ELEVATED | CRITICAL</span> - bounded by hard rules (BREACHED forces a CRITICAL floor; STALE_GPS alone can't reach ELEVATED).</li>
+              <li><strong>Used for:</strong> the severity pill on each card. The LLM's job is prose, not ranking - it never re-sorts the queue the score above already ordered.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 07 WHATS NEXT ============ -->
+    <section id="s07">
+      <div class="kicker">07 What's next</div>
+      <h2 class="title">Where this could go next</h2>
+      <p class="lede">The watcher has a wide scope of enhancements, some worth mentioning at this very stage.</p>
+
+      <div class="lim-group">
+        <h4 class="micro">Keep the truck honest about its route</h4>
+        <ul>
+          <li><strong>Route deviation checks</strong> - every load runs on a fixed, contracted route - use waypoints to ensure we're not billed extra.</li>
+          <li><strong>Loaded vs. empty miles</strong> - track which miles are actually carrying freight, not just whether the truck is moving.</li>
+          <li><strong>Minimum daily progress</strong> - an in-transit truck is expected to cover a minimum distance per day (350km).</li>
+        </ul>
+      </div>
+
+      <div class="lim-group">
+        <h4 class="micro">Give incidents more judgment, not just a fixed rule</h4>
+        <ul>
+          <li><strong>Explain idle time</strong> - Have the agent reason about why: a short break, a long break, waiting on payment, a held load, or a breakdown.</li>
+          <li><strong>Let the agent judge dropoff risk</strong> - the delay cascade uses a fixed time window today; introduce agentic judgment.</li>
+          <li><strong>Notice a rescheduled appointment</strong> - if ops reschedules a commitment because of the watcher's own recommendation, the next report should recognize that instead of comparing against the now-stale original time.</li>
+        </ul>
+      </div>
+
+      <div class="lim-group">
+        <h4 class="micro">Learn patterns instead of only tracking named ones</h4>
+        <ul>
+          <li><strong>A pattern-discovery agent</strong> - today the watcher only recognizes patterns it's explicitly told to look for. An agent could find repeated problems across customers, lanes, shippers, and carriers on its own.</li>
+          <li><strong>Model patterns as a graph</strong> - rather than flat per-lane stats, relationships between lanes, carriers, and shippers can actually be queried.</li>
+        </ul>
+      </div>
+
+      <div class="lim-group">
+        <h4 class="micro">See the load, not just its data</h4>
+        <ul>
+          <li><strong>Hyperlink load ids</strong> - straight to the record in the ops DB, so ops doesn't have to go look it up separately.</li>
+          <li><strong>An actual map view</strong> - show the load's real position and distance covered, not just a state-based timeline.</li>
+          <li><strong>Cross-check ETA with FASTAG</strong> - the expected time between two known toll pings is a second, independent ETA signal alongside the GPS-based one.</li>
+        </ul>
+      </div>
+
+      <div class="lim-group">
+        <h4 class="micro">Scale up and close the feedback loop</h4>
+        <ul>
+          <li><strong>Parallelize the investigator</strong> - concurrent calls instead of one sequential loop.</li>
+          <li><strong>Explore GraphRAG or Celery</strong> for richer cross-load context and orchestration at fleet scale.</li>
+          <li><strong>Positive incidents</strong> - track and report successful outcomes, not just failures.</li>
+          <li><strong>A real feedback loop</strong> - record what ops actually did with a recommendation, to improve future ones.</li>
+        </ul>
+      </div>
+
+    </section>
+
+    <!-- ============ 08 THANK YOU ============ -->
+    <section id="s08" style="border-bottom:none;">
+      <div class="closing" style="border-bottom:none; min-height:100vh;">
+        <div class="closing-rule"></div>
+        <h2>Thank you!!</h2>
+        <div class="closing-mark">- Truck Milestone Watcher -</div>
+      </div>
+
+      <div class="kicker">Appendix</div>
+
+      <h3 class="sub">Reading the real data</h3>
+      <p class="tight">Real-world data rarely means what the docs say it means. Four genuine ambiguities in the ops schema, and the deterministic rule each one settled into.</p>
+
+      <div class="qblock">
+        <div class="qtext">What's the actual difference between a stop's planned arrival, its committed appointment, and its actual arrival?</div>
+        <div class="qnote">Resolved with ops directly - three genuinely different clocks, modeled separately rather than collapsed into one "ETA."</div>
+      </div>
+
+      <div class="qblock">
+        <div class="qtext">Ops has many raw status / sub-status combinations across systems - which ones actually map to our six canonical states, and what happens to one we've never seen before?</div>
+        <div class="qnote">Resolved with an explicit STATUS_MAP. Anything unrecognized falls to evidence_state = UNMAPPED_STATUS rather than guessing a canonical state.</div>
+      </div>
+
+      <div class="qblock">
+        <div class="qtext">FASTAG pings sit in the same table as live telematics - but they aren't the same kind of signal.</div>
+        <div class="qnote">Excluded from anything time-sensitive - marks evidence unavailable, never stale.</div>
+      </div>
+
+      <div class="qblock">
+        <div class="qtext">The LOADED milestone barely shows up in load_tender's own status fields - ops usually jumps straight to en-route-dropoff there.</div>
+        <div class="qnote">STATUS_MAP now also reconciles a dedicated status_event LOADED signal alongside tender/sub_status, taking whichever mapped source is furthest along - so a genuine LOADED event is no longer just tolerated as a jump, it's detected directly.</div>
+      </div>
+
+      <h3 class="sub">When is a load completed?</h3>
+      <div class="flow">
+        <div class="flow-row">
+          <div class="flow-step">
+            <span class="fn">1</span>
+            <h5>AT_DROPOFF reached</h5>
+            <p>Canonical status catches up to the terminal state.</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <span class="fn">2</span>
+            <h5>Incidents resolve</h5>
+            <p>Anything still OPEN for this watch is cleared first.</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <span class="fn">3</span>
+            <h5>Watch closes</h5>
+            <p>watch_state = COMPLETED, progress_state = COMPLETED.</p>
+          </div>
+        </div>
+        <div class="flow-row-arrow">↓</div>
+        <div class="flow-row">
+          <div class="flow-step">
+            <span class="fn">4</span>
+            <h5>Episode written</h5>
+            <p>One load_memory row: delay per state, commitment outcome, severity trajectory.</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <span class="fn">5</span>
+            <h5>Patterns update</h5>
+            <p>Rolling carrier / lane / shipper stats - gated until 3 samples exist.</p>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="sub">How each flag is actually computed</h3>
+      <p class="tight">Exact conditions for evaluating flags as set in <span class="inline-code">flags.py</span>.</p>
+
+      <table class="ledger compact">
+        <tr><th>Flag</th><th>Condition</th></tr>
+        <tr><td class="tag">Transition overdue</td><td><span class="inline-code">now &gt; planned + 30min</span>.</td></tr>
+        <tr><td class="tag">Commitment - breached</td><td>En route only. <span class="inline-code">now &gt; committed</span> and no actual arrival yet.</td></tr>
+        <tr><td class="tag">Commitment - at risk</td><td>En route only. No actual arrival, and <span class="inline-code">forecasted &gt; committed</span> - fires before the deadline even passes.</td></tr>
+        <tr><td class="tag">Stale GPS</td><td>Live-source pings only (TELEMATICS / MOBILE_APP / CELLULAR_TRACKING). No ping in over an hour, or a live source with no ping ever recorded.</td></tr>
+        <tr><td class="tag">Dropoff risk</td><td><span class="inline-code">projection.dropoff_risk in {AT_RISK, BREACH_LIKELY}</span> - the delay-cascade verdict, computed below.</td></tr>
+      </table>
+
+      <h4 class="micro">Status–GPS conflict</h4>
+      <p class="tight">The same "truck is near pickup" GPS reading means something different depending on what the status already claims:</p>
+      <table class="ledger compact">
+        <tr><th>Active state</th><th>Conflict fires when</th></tr>
+        <tr><td class="mono-cell">ENROUTE_PICKUP</td><td>GPS shows within 1&nbsp;km of pickup - status hasn't caught up to reality</td></tr>
+        <tr><td class="mono-cell">AT_PICKUP</td><td>GPS shows <strong>not</strong> within 1&nbsp;km of pickup - status is ahead of reality</td></tr>
+        <tr><td class="mono-cell">LOADED</td><td>GPS shows within 1&nbsp;km of dropoff - far too early to be there</td></tr>
+        <tr><td class="mono-cell">ENROUTE_DROPOFF</td><td>GPS shows within 1&nbsp;km of dropoff - status hasn't caught up to reality</td></tr>
+        <tr><td class="mono-cell">ASSIGNED</td><td>Never checked - no meaningful location claim to conflict with yet</td></tr>
+      </table>
+
+      <h3 class="sub">How the delay cascade (domino effect) is computed</h3>
+      <p class="tight">Runs every wake as its own deterministic step, independent of which flags already fired - so it also catches a slip building up before any single-row flag would trip. Lives in <span class="inline-code">domino.py</span>, as <span class="inline-code">propagate_delay(state_rows, times, active_row, eta, now)</span>.</p>
+
+      <div class="mech">
+        <div class="mech-item">
+          <div class="m-num">01</div>
+          <div class="m-body"><h5>Delay off the active row</h5><p>Reference time is <span class="inline-code">actual → live ETA → now</span>, first one available. <span class="inline-code">delay = max(0, reference − active_row.planned)</span>, in minutes. Below <span class="inline-code">DOMINO_MIN_SLIP</span> (30&nbsp;min) the cascade stops here - SAFE, nothing propagated.</p></div>
+        </div>
+        <div class="mech-item">
+          <div class="m-num">02</div>
+          <div class="m-body"><h5>Roll forward onto downstream states</h5><p>Every incomplete row after the active one has its <span class="inline-code">planned</span> time shifted by that same delay - a rigid shift, v1. No per-row slack is subtracted yet.</p></div>
+        </div>
+        <div class="mech-item">
+          <div class="m-num">03</div>
+          <div class="m-body"><h5>Compare projected dropoff to the commitment</h5><p><span class="inline-code">dropoff_slip = projected[ENROUTE_DROPOFF] − committed_dropoff</span>, in minutes. Zero or negative means on time or early.</p></div>
+        </div>
+        <div class="mech-item">
+          <div class="m-num">04</div>
+          <div class="m-body"><h5>Verdict</h5><p><span class="inline-code">SAFE</span> (slip &le; 0), <span class="inline-code">AT_RISK</span> (slip within <span class="inline-code">DROPOFF_RISK_MARGIN</span>, 60&nbsp;min), <span class="inline-code">BREACH_LIKELY</span> (beyond it), <span class="inline-code">UNKNOWN</span> if either time is missing. AT_RISK / BREACH_LIKELY is what sets the <span class="inline-code">DROPOFF_RISK</span> flag and records which downstream states are affected.</p></div>
+        </div>
+      </div>
+
+      <div class="worked">
+        <div class="w-title">Worked example</div>
+        <div class="w-line"><span>Active row (AT_PICKUP) planned</span><span>Sep 9, 6:00 AM</span></div>
+        <div class="w-line"><span>No actual yet - live ETA</span><span>Sep 9, 8:30 AM</span></div>
+        <div class="w-line"><span>Delay</span><span>150 min (&gt; 30 min floor)</span></div>
+        <div class="w-line"><span>ENROUTE_DROPOFF planned → projected</span><span>Sep 9, 6:00 PM → 8:30 PM</span></div>
+        <div class="w-line"><span>Committed dropoff</span><span>Sep 9, 7:00 PM</span></div>
+        <div class="w-line"><span>Verdict</span><span>BREACH_LIKELY</span></div>
+      </div>
+
+      <p class="tight">Once a load is <span class="inline-code">DROPOFF_RISK</span>, the investigator is handed the whole projected journey and asked to name the affected states, restate the verdict in minutes, and give 2-3 concrete preventive actions plus a customer-facing alert line - shown together as the report's <strong>delay cascade</strong> block, on both the load evaluation and the journey diagram.</p>
+
+      <h3 class="sub">What the two LLM calls are actually asked to do</h3>
+      <p class="tight">Both are forced to call one fixed-schema tool - no free text from either ever reaches the report.</p>
+
+      <div class="dc-grid">
+        <div class="dc-card">
+          <div class="dc-head"><span class="dc-name">Investigator</span><span class="dc-src">submit_investigation</span></div>
+          <div class="dc-body">
+            <div class="dc-field"><span class="fk">overall_severity</span><span class="fv">CLEAR..CRITICAL</span></div>
+            <div class="dc-field"><span class="fk">findings[]</span><span class="fv">type, severity, suppressed, narrative</span></div>
+            <div class="dc-field"><span class="fk">domino</span><span class="fv">risk, buffer, actions, alert</span></div>
+            <div class="dc-field"><span class="fk">recommended_action</span><span class="fv">who calls whom</span></div>
+            <div class="dc-field"><span class="fk">confidence, reasoning</span><span class="fv">-</span></div>
+          </div>
+          <div class="dc-note">Runs once per load, only if a flag fired</div>
+        </div>
+        <div class="dc-card">
+          <div class="dc-head"><span class="dc-name">Report agent</span><span class="dc-src">submit_ops_report</span></div>
+          <div class="dc-body">
+            <div class="dc-field"><span class="fk">headline, summary</span><span class="fv">one wake, ~2 min read</span></div>
+            <div class="dc-field"><span class="fk">reasoning</span><span class="fv">why loads matter, ops terms</span></div>
+            <div class="dc-field"><span class="fk">priority_actions[]</span><span class="fv">title, action, why, load_ids</span></div>
+            <div class="dc-field"><span class="fk">load_notes[]</span><span class="fv">one sentence per attention load</span></div>
+          </div>
+          <div class="dc-note">Runs once per wake, over the whole batch</div>
+        </div>
+      </div>
+
+      <p class="tight">Both calls default to the same model, <span class="inline-code">claude-sonnet-4-6</span>, set once in code and overridable per run via a <span class="inline-code">REPORT_MODEL</span> env var - no separate tuning per agent. A mid-tier Sonnet was picked over a larger model because both jobs are bounded and structured (one fixed tool schema, a JSON context already assembled deterministically) rather than open-ended reasoning, and both run repeatedly - once per flagged load, once per wake - so latency and cost compound; Sonnet is reliable at forced tool-calling and calibrated judgment calls (noise vs. genuine concern) at a fraction of the cost of a top-tier model, with room to swap in a larger one for either agent later without any code change.</p>
+
+      <h4 class="micro">Investigator's system prompt, in five instructions</h4>
+      <div class="mech">
+        <div class="mech-item">
+          <div class="m-num">01</div>
+          <div class="m-body"><h5>Judge each fired flag</h5><p>Genuinely concerning, or normal occurence for this carrier/lane/shipper's own history? Suppress it if it's noise.</p></div>
+        </div>
+        <div class="mech-item">
+          <div class="m-num">02</div>
+          <div class="m-body"><h5>Assess overall severity</h5><p>CLEAR / WATCH / ELEVATED / CRITICAL - a BREACHED commitment forces a CRITICAL floor; STALE_GPS alone can never reach ELEVATED.</p></div>
+        </div>
+        <div class="mech-item">
+          <div class="m-num">03</div>
+          <div class="m-body"><h5>Narrate every unsuppressed finding</h5><p>Plain language, one narrative per finding that isn't noise.</p></div>
+        </div>
+        <div class="mech-item">
+          <div class="m-num">04</div>
+          <div class="m-body"><h5>Recommend a specific action</h5><p>Who calls whom, what to check - once severity is ELEVATED or above. A short monitoring note otherwise.</p></div>
+        </div>
+        <div class="mech-item">
+          <div class="m-num">05</div>
+          <div class="m-body"><h5>Reflect on the whole journey when dropoff is at risk</h5><p>Name the affected downstream states, restate the verdict in minutes, give 2-3 concrete preventive actions.</p></div>
+        </div>
+      </div>
+
+      <h4 class="micro">Report agent's system prompt, in four instructions</h4>
+      <div class="mech">
+        <div class="mech-item">
+          <div class="m-num">01</div>
+          <div class="m-body"><h5>Write for a two-minute read</h5><p>Group similar issues, present them bulleted - never a per-load prose dump.</p></div>
+        </div>
+        <div class="mech-item">
+          <div class="m-num">02</div>
+          <div class="m-body"><h5>Prefer the investigator's own words</h5><p>overall_severity, finding narratives, and recommended_action over raw flag names, whenever it ran.</p></div>
+        </div>
+        <div class="mech-item">
+          <div class="m-num">03</div>
+          <div class="m-body"><h5>Never re-rank</h5><p>Preserve the severity order it's handed (CRITICAL, then ELEVATED, then WATCH) - its job is prose, not ranking.</p></div>
+        </div>
+        <div class="mech-item">
+          <div class="m-num">04</div>
+          <div class="m-body"><h5>Fall back to a documented flag order</h5><p>BREACHED &rarr; CONFLICT &rarr; OVERDUE &rarr; AT_RISK &rarr; STALE, on loads the investigator never triaged.</p></div>
+        </div>
+      </div>
+
+      <p class="tight">Both prompts open with the same constraint: <strong>shadow-mode only</strong> - recommend actions, never claim anything was updated in the ops system, and use only facts already present in the JSON context handed to them.</p>
+
+      <h3 class="sub">Against the original brief</h3>
+      <p class="tight">Looking back at The Decision Register (Appendix B) of the PRD.</p>
+
+      <table class="ledger compact">
+        <tr><th>PRD asked for</th><th>What shipped</th><th>Status</th></tr>
+        <tr>
+          <td>Dispatch anchor, configurable per customer</td>
+          <td>Fixed 2-hour threshold off assignment time for every customer</td>
+          <td class="status-cell"><span class="status-pill partial">partial</span></td>
+        </tr>
+        <tr>
+          <td>5-dimension state model + a signals array</td>
+          <td>3 of 5 dimensions (progress / commitment / evidence). No <span class="inline-code">physical_outcome</span>, no <span class="inline-code">signals[]</span></td>
+          <td class="status-cell"><span class="status-pill partial">partial</span></td>
+        </tr>
+        <tr>
+          <td>Full intervention table - 9 named conditions</td>
+          <td>5 incident types. DUE_SOON, ETA_DETERIORATING, STATUS_UPDATE_MISSING, and provider-outage grouping all absent</td>
+          <td class="status-cell"><span class="status-pill partial">partial</span></td>
+        </tr>
+        <tr>
+          <td>Physical evidence advances state; status tracked separately</td>
+          <td>Inverted by design - canonical status alone completes rows; GPS never advances state</td>
+          <td class="status-cell"><span class="status-pill declined">declined</span></td>
+        </tr>
+        <tr>
+          <td>Authoritative status completes the Watch; GPS conflict flagged</td>
+          <td>Implemented exactly as proposed</td>
+          <td class="status-cell"><span class="status-pill shipped">shipped</span></td>
+        </tr>
+        <tr>
+          <td>Geofence radius &amp; dwell, set per location class</td>
+          <td>One fixed 1&nbsp;km conflict radius; dwell is a flat 18h time constant, not geofence-based at all</td>
+          <td class="status-cell"><span class="status-pill partial">partial</span></td>
+        </tr>
+        <tr>
+          <td>Movement thresholds used as completion evidence</td>
+          <td>Speed used only inside ETA math, never to confirm a milestone</td>
+          <td class="status-cell"><span class="status-pill partial">partial</span></td>
+        </tr>
+        <tr>
+          <td>5-part correlation key (tenant · trip · stop · assignment · transition)</td>
+          <td>3-part key - load, state, incident type. No tenant or assignment-version concept</td>
+          <td class="status-cell"><span class="status-pill partial">partial</span></td>
+        </tr>
+        <tr>
+          <td>Grace, tolerance &amp; data-lateness - three values, per transition</td>
+          <td>One fixed global 30-min grace. No contractual tolerance, no data-lateness window</td>
+          <td class="status-cell"><span class="status-pill partial">partial</span></td>
+        </tr>
+        <tr>
+          <td>Consume an existing GPS provider-health signal</td>
+          <td>None - staleness relies only on last-ping recency</td>
+          <td class="status-cell"><span class="status-pill declined">declined</span></td>
+        </tr>
+        <tr>
+          <td>Appendix A P0 delivery contract</td>
+          <td>Core loop, shadow mode, AI guardrails shipped. No replay clock, no duplicate/out-of-order handling, no reassignment or cancellation</td>
+          <td class="status-cell"><span class="status-pill partial">partial</span></td>
+        </tr>
+        <tr>
+          <td>Single pickup, single delivery</td>
+          <td>Implemented exactly as proposed</td>
+          <td class="status-cell"><span class="status-pill shipped">shipped</span></td>
+        </tr>
+        <tr>
+          <td>Versioned source→canonical status mapping</td>
+          <td><span class="inline-code">STATUS_MAP</span> in <span class="inline-code">mappers.py</span> - implemented, not versioned</td>
+          <td class="status-cell"><span class="status-pill partial">partial</span></td>
+        </tr>
+      </table>
+    </section>
+
+  </main>
+
+<script>
+  /* ===== rail active-section highlight ===== */
+  const links = Array.from(document.querySelectorAll('.rail-link'));
+  const sections = links.map(l => document.querySelector(l.getAttribute('href')));
+  const railObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const idx = sections.indexOf(entry.target);
+      if (idx === -1) return;
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        links[idx].classList.add('active');
+      }
+    });
+  }, { rootMargin: '-40% 0px -55% 0px', threshold: 0 });
+  sections.forEach(s => { if (s) railObserver.observe(s); });
+
+  /* ===== journey animation - load 62754 ===== */
+  const ROWS = ["ASSIGNED", "ENROUTE_PICKUP", "AT_PICKUP", "LOADED", "ENROUTE_DROPOFF"];
+  const MARKERS = ["ASSIGNED", "ENROUTE_PICKUP", "AT_PICKUP", "LOADED", "ENROUTE_DROPOFF", "AT_DROPOFF"];
+  const MARKER_POS = {};
+  MARKERS.forEach((m, i) => { MARKER_POS[m] = +(4 + i * 18.8).toFixed(1); });
+  // AT_DROPOFF has no row of its own in the ledger - arrival at dropoff is exactly what
+  // ENROUTE_DROPOFF's own clocks already describe, so its marker mirrors that row. Used
+  // for done/fill-bar bookkeeping, which stays tied to the LITERAL state (matches
+  // report.py: truck/flags/fill sit at the real active state, never shifted).
+  function sourceKey(marker) { return marker === "AT_DROPOFF" ? "ENROUTE_DROPOFF" : marker; }
+
+  // Each row's own clock describes completing the transition INTO the next state, not
+  // reaching its own name (internal/store.py's _planned_for/_committed_for/_actual_for -
+  // e.g. ENROUTE_DROPOFF's fields resolve straight to planned_dropoff_at/actual_dropoff_time,
+  // i.e. arrival AT dropoff). So a marker's LABEL CONTENT (the stacked times) shows the
+  // PRECEDING row's data - independent of sourceKey above. ASSIGNED has no preceding row,
+  // special-cased in updateTimeline(): its own actual only, single line, never colored.
+  const LABEL_SOURCE = {
+    ENROUTE_PICKUP: "ASSIGNED",
+    AT_PICKUP: "ENROUTE_PICKUP",
+    LOADED: "AT_PICKUP",
+    ENROUTE_DROPOFF: "LOADED",
+    AT_DROPOFF: "ENROUTE_DROPOFF",
+  };
+
+  // PICKUP_DWELL is 18h (constants.py) - AT_PICKUP/LOADED/ENROUTE_DROPOFF all shifted
+  // +8h from the 10h-dwell version of this fixture accordingly.
+  const FIXED = {
+    ASSIGNED:        { planned: "Sep 8, 4:00 PM", committed: "-" },
+    ENROUTE_PICKUP:  { planned: "Sep 8, 8:00 PM", committed: "Sep 8, 8:00 PM" },
+    AT_PICKUP:       { planned: "Sep 9, 2:00 PM", committed: "Sep 9, 2:00 PM" },
+    LOADED:          { planned: "Sep 9, 5:00 PM", committed: "Sep 9, 5:00 PM" },
+    ENROUTE_DROPOFF: { planned: "Sep 10, 2:00 AM", committed: "Sep 10, 2:00 AM" }
+  };
+
+  // vh_assigned = Sep 8, 2:00 PM (wake 1, nothing completed yet) - this IS ASSIGNED's
+  // own actual (TimeData.assigned_at), not a separate "departure" event; there's no
+  // such field in the real data model. Arrives pickup 8:45 PM, confirmed at pickup
+  // 10:30 PM, loaded 3:00 PM the next day, arrives dropoff 1:00 AM the day after (an
+  // hour ahead of the 2:00 AM appointment). LOADED now carries its own dispatch grace
+  // on top of the dwell (internal/store.py), so it's no longer identical to AT_PICKUP's
+  // clock.
+  // Six fixed, evenly-spaced marker slots - no time-scaling, so no crowding to guard
+  // against. Each incident carries the milestone `state` it fired on, and coloring is
+  // cumulative: once a milestone has ever been flagged, it stays red for every later
+  // wake (resolving doesn't mean the delay went away).
+  const STAGES = [
+    { ts:"Sep 8, 2:00 PM", active:0,
+      forecast:{ASSIGNED:"Sep 8, 4:00 PM", ENROUTE_PICKUP:"Sep 8, 8:00 PM", AT_PICKUP:"Sep 9, 2:00 PM", LOADED:"Sep 9, 5:00 PM", ENROUTE_DROPOFF:"Sep 10, 2:00 AM"},
+      actual:{}, done:{}, incidents:[] },
+
+    { ts:"Sep 8, 4:00 PM", active:1,
+      forecast:{ASSIGNED:"Sep 8, 4:00 PM", ENROUTE_PICKUP:"Sep 8, 7:30 PM", AT_PICKUP:"Sep 9, 2:00 PM", LOADED:"Sep 9, 5:00 PM", ENROUTE_DROPOFF:"Sep 10, 2:00 AM"},
+      actual:{ASSIGNED:"Sep 8, 3:05 PM"}, done:{ASSIGNED:true}, incidents:[] },
+
+    { ts:"Sep 8, 6:00 PM", active:1,
+      forecast:{ASSIGNED:"Sep 8, 4:00 PM", ENROUTE_PICKUP:"Sep 8, 7:40 PM", AT_PICKUP:"Sep 9, 2:00 PM", LOADED:"Sep 9, 5:00 PM", ENROUTE_DROPOFF:"Sep 10, 2:00 AM"},
+      actual:{ASSIGNED:"Sep 8, 3:05 PM"}, done:{ASSIGNED:true}, incidents:[] },
+
+    { ts:"Sep 8, 8:00 PM", active:1,
+      forecast:{ASSIGNED:"Sep 8, 4:00 PM", ENROUTE_PICKUP:"Sep 8, 8:50 PM", AT_PICKUP:"Sep 9, 2:00 PM", LOADED:"Sep 9, 5:00 PM", ENROUTE_DROPOFF:"Sep 10, 2:00 AM"},
+      actual:{ASSIGNED:"Sep 8, 3:05 PM"}, done:{ASSIGNED:true},
+      incidents:[
+        {type:"COMMITMENT_RISK", state:"ENROUTE_PICKUP", text:"COMMITMENT_RISK (BREACHED) - now (8:00 PM) has reached the committed pickup appointment with no arrival recorded. Incident opens, investigator triggered."}
+      ] },
+
+    { ts:"Sep 8, 10:00 PM", active:2,
+      forecast:{ASSIGNED:"Sep 8, 4:00 PM", ENROUTE_PICKUP:"Sep 8, 8:50 PM", AT_PICKUP:"Sep 9, 2:00 PM", LOADED:"Sep 9, 5:00 PM", ENROUTE_DROPOFF:"Sep 10, 2:00 AM"},
+      actual:{ASSIGNED:"Sep 8, 3:05 PM", ENROUTE_PICKUP:"Sep 8, 8:45 PM"},
+      done:{ASSIGNED:true, ENROUTE_PICKUP:true}, incidents:[] },
+
+    { ts:"Sep 9, 12:00 AM", active:3,
+      forecast:{ASSIGNED:"Sep 8, 4:00 PM", ENROUTE_PICKUP:"Sep 8, 8:50 PM", AT_PICKUP:"Sep 9, 2:00 PM", LOADED:"Sep 9, 5:00 PM", ENROUTE_DROPOFF:"Sep 10, 2:00 AM"},
+      actual:{ASSIGNED:"Sep 8, 3:05 PM", ENROUTE_PICKUP:"Sep 8, 8:45 PM", AT_PICKUP:"Sep 8, 10:30 PM"},
+      done:{ASSIGNED:true, ENROUTE_PICKUP:true, AT_PICKUP:true}, incidents:[] },
+
+    { ts:"Sep 9, 4:00 AM", active:3,
+      forecast:{ASSIGNED:"Sep 8, 4:00 PM", ENROUTE_PICKUP:"Sep 8, 8:50 PM", AT_PICKUP:"Sep 9, 2:00 PM", LOADED:"Sep 9, 5:00 PM", ENROUTE_DROPOFF:"Sep 10, 2:00 AM"},
+      actual:{ASSIGNED:"Sep 8, 3:05 PM", ENROUTE_PICKUP:"Sep 8, 8:45 PM", AT_PICKUP:"Sep 8, 10:30 PM"},
+      done:{ASSIGNED:true, ENROUTE_PICKUP:true, AT_PICKUP:true}, incidents:[] },
+
+    { ts:"Sep 9, 8:00 AM", active:3,
+      forecast:{ASSIGNED:"Sep 8, 4:00 PM", ENROUTE_PICKUP:"Sep 8, 8:50 PM", AT_PICKUP:"Sep 9, 2:00 PM", LOADED:"Sep 9, 5:00 PM", ENROUTE_DROPOFF:"Sep 10, 2:00 AM"},
+      actual:{ASSIGNED:"Sep 8, 3:05 PM", ENROUTE_PICKUP:"Sep 8, 8:45 PM", AT_PICKUP:"Sep 8, 10:30 PM"},
+      done:{ASSIGNED:true, ENROUTE_PICKUP:true, AT_PICKUP:true}, incidents:[] },
+
+    { ts:"Sep 9, 11:00 AM", active:3,
+      forecast:{ASSIGNED:"Sep 8, 4:00 PM", ENROUTE_PICKUP:"Sep 8, 8:50 PM", AT_PICKUP:"Sep 9, 2:00 PM", LOADED:"Sep 9, 12:30 PM", ENROUTE_DROPOFF:"Sep 10, 2:00 AM"},
+      actual:{ASSIGNED:"Sep 8, 3:05 PM", ENROUTE_PICKUP:"Sep 8, 8:45 PM", AT_PICKUP:"Sep 8, 10:30 PM"},
+      done:{ASSIGNED:true, ENROUTE_PICKUP:true, AT_PICKUP:true}, incidents:[] },
+
+    { ts:"Sep 9, 1:00 PM", active:3,
+      forecast:{ASSIGNED:"Sep 8, 4:00 PM", ENROUTE_PICKUP:"Sep 8, 8:50 PM", AT_PICKUP:"Sep 9, 2:00 PM", LOADED:"Sep 9, 12:30 PM", ENROUTE_DROPOFF:"Sep 10, 2:00 AM"},
+      actual:{ASSIGNED:"Sep 8, 3:05 PM", ENROUTE_PICKUP:"Sep 8, 8:45 PM", AT_PICKUP:"Sep 8, 10:30 PM"},
+      done:{ASSIGNED:true, ENROUTE_PICKUP:true, AT_PICKUP:true}, incidents:[] },
+
+    { ts:"Sep 9, 4:00 PM", active:4,
+      forecast:{ASSIGNED:"Sep 8, 4:00 PM", ENROUTE_PICKUP:"Sep 8, 8:50 PM", AT_PICKUP:"Sep 9, 2:00 PM", LOADED:"Sep 9, 12:30 PM", ENROUTE_DROPOFF:"Sep 10, 2:00 AM"},
+      actual:{ASSIGNED:"Sep 8, 3:05 PM", ENROUTE_PICKUP:"Sep 8, 8:45 PM", AT_PICKUP:"Sep 8, 10:30 PM", LOADED:"Sep 9, 3:00 PM"},
+      done:{ASSIGNED:true, ENROUTE_PICKUP:true, AT_PICKUP:true, LOADED:true}, incidents:[] },
+
+    { ts:"Sep 9, 6:00 PM", active:4,
+      forecast:{ASSIGNED:"Sep 8, 4:00 PM", ENROUTE_PICKUP:"Sep 8, 8:50 PM", AT_PICKUP:"Sep 9, 2:00 PM", LOADED:"Sep 9, 12:30 PM", ENROUTE_DROPOFF:"Sep 9, 11:00 PM"},
+      actual:{ASSIGNED:"Sep 8, 3:05 PM", ENROUTE_PICKUP:"Sep 8, 8:45 PM", AT_PICKUP:"Sep 8, 10:30 PM", LOADED:"Sep 9, 3:00 PM"},
+      done:{ASSIGNED:true, ENROUTE_PICKUP:true, AT_PICKUP:true, LOADED:true}, incidents:[] },
+
+    { ts:"Sep 9, 8:00 PM", active:4,
+      forecast:{ASSIGNED:"Sep 8, 4:00 PM", ENROUTE_PICKUP:"Sep 8, 8:50 PM", AT_PICKUP:"Sep 9, 2:00 PM", LOADED:"Sep 9, 12:30 PM", ENROUTE_DROPOFF:"Sep 9, 11:00 PM"},
+      actual:{ASSIGNED:"Sep 8, 3:05 PM", ENROUTE_PICKUP:"Sep 8, 8:45 PM", AT_PICKUP:"Sep 8, 10:30 PM", LOADED:"Sep 9, 3:00 PM"},
+      done:{ASSIGNED:true, ENROUTE_PICKUP:true, AT_PICKUP:true, LOADED:true},
+      incidents:[
+        {type:"STALE_GPS", state:"ENROUTE_DROPOFF", text:"STALE_GPS - no live ping (TELEMATICS / MOBILE_APP / CELLULAR_TRACKING) in over an hour (GPS_STALE_AFTER). The truck appears to have gone quiet unexpectedly during this stretch; forecast freezes until a live ping returns."}
+      ] },
+
+    { ts:"Sep 9, 10:00 PM", active:4,
+      forecast:{ASSIGNED:"Sep 8, 4:00 PM", ENROUTE_PICKUP:"Sep 8, 8:50 PM", AT_PICKUP:"Sep 9, 2:00 PM", LOADED:"Sep 9, 12:30 PM", ENROUTE_DROPOFF:"Sep 9, 11:00 PM"},
+      actual:{ASSIGNED:"Sep 8, 3:05 PM", ENROUTE_PICKUP:"Sep 8, 8:45 PM", AT_PICKUP:"Sep 8, 10:30 PM", LOADED:"Sep 9, 3:00 PM"},
+      done:{ASSIGNED:true, ENROUTE_PICKUP:true, AT_PICKUP:true, LOADED:true}, incidents:[] },
+
+    { ts:"Sep 10, 12:00 AM", active:4,
+      forecast:{ASSIGNED:"Sep 8, 4:00 PM", ENROUTE_PICKUP:"Sep 8, 8:50 PM", AT_PICKUP:"Sep 9, 2:00 PM", LOADED:"Sep 9, 12:30 PM", ENROUTE_DROPOFF:"Sep 9, 11:00 PM"},
+      actual:{ASSIGNED:"Sep 8, 3:05 PM", ENROUTE_PICKUP:"Sep 8, 8:45 PM", AT_PICKUP:"Sep 8, 10:30 PM", LOADED:"Sep 9, 3:00 PM"},
+      done:{ASSIGNED:true, ENROUTE_PICKUP:true, AT_PICKUP:true, LOADED:true}, incidents:[] },
+
+    { ts:"Sep 10, 2:00 AM", active:-1,
+      forecast:{ASSIGNED:"Sep 8, 4:00 PM", ENROUTE_PICKUP:"Sep 8, 8:50 PM", AT_PICKUP:"Sep 9, 2:00 PM", LOADED:"Sep 9, 12:30 PM", ENROUTE_DROPOFF:"Sep 10, 1:00 AM"},
+      actual:{ASSIGNED:"Sep 8, 3:05 PM", ENROUTE_PICKUP:"Sep 8, 8:45 PM", AT_PICKUP:"Sep 8, 10:30 PM", LOADED:"Sep 9, 3:00 PM", ENROUTE_DROPOFF:"Sep 10, 1:00 AM"},
+      done:{ASSIGNED:true, ENROUTE_PICKUP:true, AT_PICKUP:true, LOADED:true, ENROUTE_DROPOFF:true}, incidents:[] }
+  ];
+
+  // Stage timestamps carry no year ("Sep 8, 2:00 PM"); pin one so Date() parses cleanly.
+  // Only used for the day-boundary marks now - the six milestone slots are fixed %, not
+  // time-scaled (that's the whole point of the fixed-marker redesign).
+  function parseTs(str){ return new Date(str.replace(/^([A-Za-z]+ \d+),/, '$1, 2026,')); }
+  const AXIS_START = parseTs(STAGES[0].ts).getTime();
+  const AXIS_END = parseTs(STAGES[STAGES.length - 1].ts).getTime();
+  function pct(str){
+    const t = parseTs(str).getTime();
+    return Math.max(0, Math.min(100, (t - AXIS_START) / (AXIS_END - AXIS_START) * 100));
+  }
+  document.getElementById('dayMark').style.left = pct('Sep 9, 12:00 AM') + '%';
+  document.getElementById('dayMark2').style.left = pct('Sep 10, 12:00 AM') + '%';
+
+  // ---- build the six marker label stacks + point dots once; content/color updates per wake ----
+  const jy2Labels = document.getElementById('jy2Labels');
+  const jy2TrackWrap = document.getElementById('jy2TrackWrap');
+  const jy2Fill = document.getElementById('jy2Fill');
+
+  MARKERS.forEach(m => {
+    const label = document.createElement('div');
+    label.className = 'jy2-label';
+    label.id = 'jy2label-' + m;
+    label.style.left = MARKER_POS[m] + '%';
+    label.innerHTML =
+      "<span class='jy2-name'>" + m.replace(/_/g, ' ') + "</span>" +
+      "<span class='jy2-top'></span><span class='jy2-planned'></span>";
+    jy2Labels.appendChild(label);
+
+    const pt = document.createElement('div');
+    pt.className = 'jy2-point';
+    pt.id = 'jy2pt-' + m;
+    pt.style.left = MARKER_POS[m] + '%';
+    jy2TrackWrap.appendChild(pt);
+  });
+
+  // truck goes after the points (so it renders above them), flags get appended after that
+  const truckEl = document.getElementById('truck');
+  jy2TrackWrap.appendChild(truckEl);
+
+  // one clickable flag pin per incident occurrence, below the line at the marker for the
+  // milestone it fired on - built once, shown from its firing wake onward (not just that
+  // one wake) since a flag doesn't un-happen on a later wake.
+  const flagPins = {};
+  STAGES.forEach((s, i) => {
+    (s.incidents || []).forEach((inc, j) => {
+      const marker = document.createElement('div');
+      marker.className = 'jy2-flag';
+      marker.style.left = MARKER_POS[inc.state] + '%';
+      marker.innerHTML =
+        "<span class='jy2-pin'><svg viewBox='0 0 20 22' width='100%' height='100%'>" +
+        "<line x1='3' y1='2' x2='3' y2='20' stroke='currentColor' stroke-width='1.6'/>" +
+        "<path d='M3 2 L17 5 L3 9 Z' fill='currentColor'/></svg></span>" +
+        "<div class='flag-popup' id='flagPopup" + i + "-" + j + "'>" +
+        "<span class='fp-close'>×</span>" +
+        "<div class='fp-title'>" + inc.type.replace(/_/g, ' ') + " &middot; wake " + (i + 1) + " &middot; " + s.ts + "</div>" +
+        "<div class='fp-line'>" + inc.text + "</div>" +
+        "</div>";
+      jy2TrackWrap.appendChild(marker);
+      (flagPins[i] = flagPins[i] || []).push(marker);
+
+      const popup = marker.querySelector('.flag-popup');
+      marker.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const wasOpen = popup.classList.contains('show');
+        document.querySelectorAll('.flag-popup.show').forEach(p => p.classList.remove('show'));
+        if (!wasOpen) popup.classList.add('show');
+      });
+      popup.querySelector('.fp-close').addEventListener('click', (e) => {
+        e.stopPropagation();
+        popup.classList.remove('show');
+      });
+    });
+  });
+
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.flag-popup.show').forEach(p => p.classList.remove('show'));
+  });
+
+  const wakeLabelEl = document.getElementById('wakeLabel');
+  const wakeTsEl = document.getElementById('wakeTs');
+  const incidentBanner = document.getElementById('incidentBanner');
+  const incidentList = document.getElementById('incidentList');
+  const jhState = document.getElementById('jhState');
+  const stateBody = document.getElementById('stateTableBody');
+  const slider = document.getElementById('wakeSlider');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+
+  function updateTimeline(stageIdx){
+    const s = STAGES[stageIdx];
+
+    // cumulative: every milestone flagged at or before this wake, not just this one
+    const flagged = new Set();
+    for (let i = 0; i <= stageIdx; i++) {
+      (STAGES[i].incidents || []).forEach(inc => flagged.add(inc.state));
+    }
+
+    MARKERS.forEach(m => {
+      const label = document.getElementById('jy2label-' + m);
+      const topEl = label.querySelector('.jy2-top');
+      const planEl = label.querySelector('.jy2-planned');
+      // point/label "done" styling stays tied to the marker's OWN literal state -
+      // independent of which row's data the label content below is showing.
+      const ownDone = !!s.done[sourceKey(m)];
+
+      if (m === "ASSIGNED") {
+        // a pure fact (when was this load assigned), not a deadline - nothing to
+        // compare it against, so it's never colored, and there's no second line.
+        // Dispatch-deadline lateness belongs to ENROUTE_PICKUP below, since that's
+        // where ASSIGNED's own planned/forecast now display under the content shift.
+        const actualVal = s.actual.ASSIGNED;
+        if (actualVal) {
+          topEl.textContent = actualVal;
+          topEl.className = 'jy2-top jy2-actual';
+        } else {
+          topEl.textContent = 'actual';
+          topEl.className = 'jy2-top jy2-word';
+        }
+        planEl.textContent = '';
+        planEl.className = 'jy2-planned';
+        label.classList.toggle('jy2-done', ownDone);
+        label.classList.remove('jy2-on');
+        document.getElementById('jy2pt-ASSIGNED').classList.toggle('jy2-done', ownDone);
+        return;
+      }
+
+      const key = LABEL_SOURCE[m];
+      const fixed = FIXED[key];
+      const doneNow = !!s.done[key];
+      const actualVal = s.actual[key];
+      const forecastVal = s.forecast[key];
+      const hasRealForecast = forecastVal && forecastVal !== fixed.planned;
+      const isFlagged = flagged.has(key);
+
+      let topText, topCls, hasTop;
+      if (doneNow && actualVal) {
+        topText = actualVal; topCls = 'jy2-actual'; hasTop = true;
+      } else if (!doneNow && hasRealForecast) {
+        topText = '~' + forecastVal; topCls = 'jy2-fcst'; hasTop = true;
+      } else {
+        topText = doneNow ? 'actual' : 'forecast'; topCls = 'jy2-word'; hasTop = false;
+      }
+      const colorCls = isFlagged ? 'jy2-red' : (hasTop ? 'jy2-green' : '');
+
+      topEl.textContent = topText;
+      topEl.className = 'jy2-top ' + topCls + (colorCls ? ' ' + colorCls : '');
+      const planColor = isFlagged ? 'jy2-red' : (fixed.planned ? 'jy2-green' : '');
+      planEl.textContent = fixed.planned || 'planned';
+      planEl.className = fixed.planned ? ('jy2-planned' + (planColor ? ' ' + planColor : '')) : 'jy2-planned jy2-word';
+
+      label.classList.toggle('jy2-done', ownDone);
+      label.classList.remove('jy2-on');
+      document.getElementById('jy2pt-' + m).classList.toggle('jy2-done', ownDone);
+    });
+
+    const activeMarker = s.active === -1 ? 'AT_DROPOFF' : MARKERS[s.active];
+    document.getElementById('jy2label-' + activeMarker).classList.add('jy2-on');
+    truckEl.style.left = MARKER_POS[activeMarker] + '%';
+
+    const doneMarkers = MARKERS.filter(m => s.done[sourceKey(m)]);
+    const fillX = Math.max(MARKER_POS[activeMarker], 0, ...doneMarkers.map(m => MARKER_POS[m]));
+    jy2Fill.style.width = fillX + '%';
+
+    // flag pins persist from their firing wake onward
+    Object.keys(flagPins).forEach(key => {
+      const fireIdx = parseInt(key, 10);
+      flagPins[key].forEach(el => {
+        const show = stageIdx >= fireIdx;
+        el.classList.toggle('show', show);
+        if (!show) el.querySelector('.flag-popup').classList.remove('show');
+      });
+    });
+  }
+
+  function render(stageIdx){
+    const s = STAGES[stageIdx];
+    updateTimeline(stageIdx);
+    wakeLabelEl.textContent = 'WAKE ' + (stageIdx+1) + ' / ' + STAGES.length;
+    wakeTsEl.textContent = s.ts;
+    jhState.textContent = s.active === -1 ? 'AT_DROPOFF · CLOSED' : ROWS[s.active];
+
+    if (s.incidents && s.incidents.length) {
+      incidentBanner.classList.add('show');
+      incidentList.innerHTML = s.incidents.map(inc =>
+        '<div class="incident-line"><span class="ib-dot"></span><span>' + inc.text + '</span></div>'
+      ).join('');
+    } else {
+      incidentBanner.classList.remove('show');
+    }
+
+    stateBody.innerHTML = '';
+    ROWS.forEach((name, i) => {
+      const tr = document.createElement('tr');
+      if (i === s.active) tr.classList.add('active');
+      const fixed = FIXED[name];
+      const forecast = s.forecast[name] || fixed.planned;
+      const actual = s.actual[name] || '-';
+      const done = s.done[name];
+      const next = i < ROWS.length - 1 ? ROWS[i + 1] : 'AT_DROPOFF';
+
+      // compare against the previous wake to know what's new this wake
+      let forecastChanged = false, actualChanged = false, doneChanged = false;
+      if (stageIdx > 0) {
+        const prev = STAGES[stageIdx - 1];
+        const prevForecast = prev.forecast[name] || fixed.planned;
+        const prevActual = prev.actual[name] || '-';
+        const prevDone = prev.done[name];
+        forecastChanged = forecast !== prevForecast;
+        actualChanged = actual !== prevActual;
+        doneChanged = done !== prevDone;
+      }
+
+      tr.innerHTML =
+        '<td class="st-name">' + name + '</td>' +
+        '<td class="mono-cell" style="font-size:0.68rem; color:var(--ink-faint);">' + next + '</td>' +
+        '<td>' + fixed.planned + '</td>' +
+        '<td>' + fixed.committed + '</td>' +
+        '<td' + (forecastChanged ? ' class="cell-updated"' : '') + '>' + forecast + '</td>' +
+        '<td' + (actualChanged ? ' class="cell-updated"' : '') + '>' + actual + '</td>' +
+        '<td class="' + (done ? 'st-done' : 'st-pending') + (doneChanged ? ' cell-updated' : '') + '">' + (done ? '✓' : '-') + '</td>';
+      stateBody.appendChild(tr);
+    });
+
+    prevBtn.disabled = stageIdx === 0;
+    nextBtn.disabled = stageIdx === STAGES.length - 1;
+  }
+
+  slider.addEventListener('input', () => render(parseInt(slider.value, 10)));
+  prevBtn.addEventListener('click', () => { slider.value = Math.max(0, parseInt(slider.value,10)-1); render(parseInt(slider.value,10)); });
+  nextBtn.addEventListener('click', () => { slider.value = Math.min(STAGES.length-1, parseInt(slider.value,10)+1); render(parseInt(slider.value,10)); });
+
+  render(0);
+</script>
+
+</body>
+</html>
